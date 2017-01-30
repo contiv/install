@@ -14,3 +14,8 @@ host_installer_config=$src_conf_path/contiv.conf
 host_tls_cert=$src_conf_path/cert.pem
 host_tls_key=$src_conf_path/key.pem
 host_ans_key=$src_conf_path/insecure_private_key
+
+# Network mode can be "standalone" or "aci"
+contiv_network_mode="standalone"
+# Forwarding mode can be "bridge" or "routing"
+fwd_mode="bridge"

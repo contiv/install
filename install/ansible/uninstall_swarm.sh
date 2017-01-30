@@ -15,7 +15,7 @@ usage() {
 
 mkdir -p $src_conf_path
 uninstall_scheduler=""
-while getopts ":f:z:n:a:e:i" opt; do
+while getopts ":f:z:n:a:e:im:d:" opt; do
   case $opt in
     f)
       cp $OPTARG $host_contiv_config
@@ -31,6 +31,12 @@ while getopts ":f:z:n:a:e:i" opt; do
       ;;
     e)
       ans_key=$OPTARG
+      ;;
+    m)
+      contiv_network_mode=$OPTARG
+      ;;
+    d)
+      fwd_mode=$OPTARG
       ;;
     i) 
       echo "Uninstalling docker will fail if the uninstallation is being run from a node in the cluster."
@@ -75,5 +81,5 @@ if [[ -f $ans_key ]]; then
 fi
 
 echo "Starting the ansible container"
-docker run --rm -v $src_conf_path:$container_conf_path contiv/install:__CONTIV_INSTALL_VERSION__ sh -c "./install/ansible/uninstall.sh -n $netmaster -a \"$ans_opts\" $uninstall_scheduler"
+docker run --rm -v $src_conf_path:$container_conf_path contiv/install:__CONTIV_INSTALL_VERSION__ sh -c "./install/ansible/uninstall.sh -n $netmaster -a \"$ans_opts\" $uninstall_scheduler -m $contiv_network_mode -d $fwd_mode"
 rm -rf $src_conf_path

@@ -43,7 +43,7 @@ mkdir -p $src_conf_path
 # Check for docker only when requested to install the scheduler stack
 # Else there are no pre-requisites on the host
 install_scheduler=""
-while getopts ":f:z:c:k:n:a:e:i" opt; do
+while getopts ":f:z:c:k:n:a:e:im:d:" opt; do
   case $opt in
     f)
       cp $OPTARG $host_contiv_config
@@ -65,6 +65,12 @@ while getopts ":f:z:c:k:n:a:e:i" opt; do
       ;;
     e)
       ans_key=$OPTARG
+      ;;
+    m)
+      contiv_network_mode=$OPTARG
+      ;;
+    d)
+      fwd_mode=$OPTARG
       ;;
     i) 
       check_for_prereqs
@@ -115,5 +121,13 @@ if [[ ! -f $host_tls_cert || ! -f $host_tls_key ]]; then
 fi 
 
 echo "Starting the ansible container"
-docker run --rm -v $src_conf_path:$container_conf_path contiv/install:__CONTIV_INSTALL_VERSION__ sh -c "./install/ansible/install.sh -n $netmaster -a \"$ans_opts\" $install_scheduler"
+docker run --rm -v $src_conf_path:$container_conf_path contiv/install:__CONTIV_INSTALL_VERSION__ sh -c "./install/ansible/install.sh -n $netmaster -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode" 
 rm -rf $src_conf_path
+
+echo "Installation is complete"
+echo "========================================================="
+echo " "
+echo "Please export DOCKER_HOST=$netmaster:2375 in your shell before proceeding"
+echo "Contiv UI is available at https://$netmaster:10000
+echo " "
+echo "========================================================="
