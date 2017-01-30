@@ -91,11 +91,6 @@ if [[ ! -f $host_contiv_config ]]; then
   usage
 fi
 
-if [[ ! -f $host_installer_config ]]; then
-	touch $host_installer_config
-  echo "Created host_installer_config"
-fi
-
 if [[ "$netmaster" = ""  ]]; then
 	echo "Netmaster IP/name is missing"
   usage
@@ -127,7 +122,7 @@ rm -rf $src_conf_path
 echo "Installation is complete"
 echo "========================================================="
 echo " "
-echo "Please export DOCKER_HOST=$netmaster:2375 in your shell before proceeding"
-echo "Contiv UI is available at https://$netmaster:10000
+echo "Please export DOCKER_HOST=tcp://$netmaster:2375 in your shell before proceeding"
+echo "Contiv UI is available at https://$netmaster:10000"
 echo " "
 echo "========================================================="

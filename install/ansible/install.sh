@@ -71,10 +71,6 @@ mkdir -p $inventory
 host_inventory="$inventory/contiv_hosts"
 node_info="$inventory/contiv_nodes"
 
-# Load any additional extra parameters. This needs to be done after the default setting
-# to allow user to override the values
-. $installer_config
-
 ./genInventoryFile.py $contiv_config $host_inventory $node_info $contiv_network_mode $fwd_mode
 
 cluster="etcd://$netmaster:2379"
@@ -90,6 +86,12 @@ sed -i.bak "s#__CLUSTER_STORE__#$cluster#g" $env_file
 # Copy certs
 cp /var/contiv/cert.pem /ansible/roles/auth_proxy/files/
 cp /var/contiv/key.pem /ansible/roles/auth_proxy/files/
+
+# Override extra vars file, if one is provided.
+if [[ -f $installer_config ]]; then
+  mv $env_file $env_file.bak
+  cp $installer_config $env_file
+fi
 
 echo "Installing Contiv"
 # TODO: rather than running them separately - merge the playbooks, that makes error tracking simpler
