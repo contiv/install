@@ -1,0 +1,18 @@
+# This is the configuration for baremetal used for testing aci installer
+# XXX: for now we have one setup so hardcoding the details, we need to
+# revisit this when we add more aci test setups
+
+CONNECTION_INFO:
+      contiv-aci-server4:
+        role: master
+        control: enp3s0f1
+        data: enp130s0f1
+      contiv-aci-server5:
+        control: enp3s0f1
+        data: enp130s0f1
+APIC_URL: "https://contiv-aci-ifc1:443"
+APIC_USERNAME: "admin"
+APIC_PASSWORD: "ins3965!"
+APIC_LEAF_NODES:
+    - topology/pod-1/node-101
+    - topology/pod-1/node-102
