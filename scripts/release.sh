@@ -97,9 +97,9 @@ chmod +x $output_dir/install/install.sh
 chmod +x $k8s_yaml_dir/install.sh
 chmod +x $k8s_yaml_dir/uninstall.sh
 chmod +x $ansible_yaml_dir/install_swarm.sh
-sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$auth_proxy_version/g" $ansible_yaml_dir/install_swarm.sh
+sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$VERSION/g" $ansible_yaml_dir/install_swarm.sh
 chmod +x $ansible_yaml_dir/uninstall_swarm.sh
-sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$auth_proxy_version/g" $ansible_yaml_dir/uninstall_swarm.sh
+sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$VERSION/g" $ansible_yaml_dir/uninstall_swarm.sh
 
 # Cleanup the backup files
 rm -f $k8s_yaml_dir/*.bak
