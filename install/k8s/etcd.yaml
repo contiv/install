@@ -1,0 +1,40 @@
+# This manifest installs the Contiv etcd on the kubeadm master. 
+# If using an external etcd instance, this can be deleted. This uses a DaemonSet
+# to force it to run on the master even when the master isn't schedulable, and uses
+# nodeSelector to ensure it only runs on the master.
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: contiv-etcd
+  namespace: kube-system
+  labels:
+    k8s-app: contiv-etcd
+spec:
+  template:
+    metadata:
+      labels:
+        k8s-app: contiv-etcd
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+        scheduler.alpha.kubernetes.io/tolerations: |
+          [{"key": "dedicated", "value": "master", "effect": "NoSchedule" },
+           {"key":"CriticalAddonsOnly", "operator":"Exists"}]
+    spec:
+      # Only run this pod on the master.
+      nodeSelector:
+        kubeadm.alpha.kubernetes.io/role: master
+      hostNetwork: true
+      containers:
+        - name: contiv-etcd
+          image: gcr.io/google_containers/etcd:__ETCD_VERSION__
+          command: ["/bin/sh","-c"]
+          args: ["/usr/local/bin/etcd --name=contiv --data-dir=/var/etcd/contiv-data --advertise-client-urls=http://__NETMASTER_IP__:6666 --listen-client-urls=http://0.0.0.0:6666 --listen-peer-urls=http://0.0.0.0:6667"]
+          volumeMounts:
+            - name: var-etcd
+              mountPath: /var/etcd
+      volumes:
+        - name: var-etcd
+          hostPath:
+            path: /var/etcd
+
+---
