@@ -8,7 +8,7 @@ VERSION=${BUILD_VERSION-$DEV_IMAGE_NAME}
 
 auth_proxy_version=${CONTIV_API_PROXY_VERSION:-"1.0.0-alpha"}
 aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
-contiv_version=${CONTIV_VERSION:-"v1.0.0-alpha-01-21-2017.20-19-23.UTC"}
+contiv_version=${CONTIV_VERSION:-"v1.0.0-alpha-01-28-2017.10-23-11.UTC"}
 etcd_version=${CONTIV_ETCD_VERSION:-2.3.7}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
 
