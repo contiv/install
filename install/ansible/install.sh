@@ -12,12 +12,6 @@ scheduler_provider=${CONTIV_SCHEDULER_PROVIDER:-"native-swarm"}
 # If an etcd or consul cluster store is not provided, we will start an etcd instance
 cluster_store=""
 
-# Network mode can be "standalone" or "aci"
-contiv_network_mode="standalone"
-
-# Forwarding mode can be "bridge" or routing
-fwd_mode="bridge"
-
 # Should the scheduler stack (docker swarm or k8s be installed)
 install_scheduler=False
 
@@ -27,7 +21,7 @@ netmaster=""
 
 usage () {
   echo "Usage:"
-  echo "./install.sh -n <netmaster IP> -a <ansible options> -i <install scheduler stack>"
+  echo "./install.sh -n <netmaster IP> -a <ansible options> -i <install scheduler stack> -m <network mode - standalone/aci> -f <fwd mode - routing/bridge>"
 
   echo ""
   exit 1
@@ -40,7 +34,7 @@ error_ret() {
   exit 1
 }
 
-while getopts ":n:a:i" opt; do
+while getopts ":n:a:im:d:" opt; do
     case $opt in
        n)
           netmaster=$OPTARG
@@ -50,6 +44,12 @@ while getopts ":n:a:i" opt; do
           ;;
        i)
           install_scheduler=True
+          ;;
+       m)
+          contiv_network_mode=$OPTARG
+          ;;
+       d)
+          fwd_mode=$OPTARG
           ;;
        :)
           echo "An argument required for $OPTARG was not passed"
@@ -71,11 +71,11 @@ mkdir -p $inventory
 host_inventory="$inventory/contiv_hosts"
 node_info="$inventory/contiv_nodes"
 
-./genInventoryFile.py $contiv_config $host_inventory $node_info $contiv_network_mode $fwd_mode
-
 # Load any additional extra parameters. This needs to be done after the default setting
 # to allow user to override the values
 . $installer_config
+
+./genInventoryFile.py $contiv_config $host_inventory $node_info $contiv_network_mode $fwd_mode
 
 cluster="etcd://$netmaster:2379"
 if [ "$cluster_store" != "" ];then
