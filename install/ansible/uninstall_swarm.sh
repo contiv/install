@@ -7,7 +7,7 @@ def_ans_opts="--private-key $def_ans_key -u vagrant"
     
 usage() {
   echo "Usage:"
-  echo "./uninstall_swarm.sh -f <host configuration file> -n <netmaster IP> -a <ansible options> -e <ansible key> -i <uninstall scheduler stack> -z <installer config file>"
+  echo "./uninstall_swarm.sh -f <host configuration file> -n <netmaster IP> -a <ansible options> -e <ansible key> -i <uninstall scheduler stack> -z <installer config file> -m <network mode - standalone/aci> -d <fwd mode - routing/bridge>  -v <ACI image>"
 
   echo ""
   exit 1
@@ -15,7 +15,7 @@ usage() {
 
 mkdir -p $src_conf_path
 uninstall_scheduler=""
-while getopts ":f:z:n:a:e:im:d:" opt; do
+while getopts ":f:z:n:a:e:im:d:v:" opt; do
   case $opt in
     f)
       cp $OPTARG $host_contiv_config
@@ -37,6 +37,9 @@ while getopts ":f:z:n:a:e:im:d:" opt; do
       ;;
     d)
       fwd_mode=$OPTARG
+      ;;
+    v)
+      aci_image=$OPTARG
       ;;
     i) 
       echo "Uninstalling docker will fail if the uninstallation is being run from a node in the cluster."
@@ -80,6 +83,12 @@ if [[ -f $ans_key ]]; then
   ans_opts="$ans_opts --private-key $def_ans_key "
 fi
 
+if [ "$aci_image" != "" ];then
+  aci_param="-v $aci_image"
+else
+  aci_param=""
+fi
+
 echo "Starting the ansible container"
-docker run --rm -v $src_conf_path:$container_conf_path contiv/install:__CONTIV_INSTALL_VERSION__ sh -c "./install/ansible/uninstall.sh -n $netmaster -a \"$ans_opts\" $uninstall_scheduler -m $contiv_network_mode -d $fwd_mode"
+docker run --rm -v $src_conf_path:$container_conf_path contiv/install:__CONTIV_INSTALL_VERSION__ sh -c "./install/ansible/uninstall.sh -n $netmaster -a \"$ans_opts\" $uninstall_scheduler -m $contiv_network_mode -d $fwd_mode -v $aci_param"
 rm -rf $src_conf_path

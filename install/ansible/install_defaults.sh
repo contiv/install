@@ -19,3 +19,5 @@ host_ans_key=$src_conf_path/insecure_private_key
 contiv_network_mode="standalone"
 # Forwarding mode can be "bridge" or "routing"
 fwd_mode="bridge"
+
+aci_image=""

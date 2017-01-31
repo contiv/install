@@ -33,7 +33,7 @@ check_for_prereqs() {
 
 usage() {
   echo "Usage:"
-  echo "./install_swarm.sh -f <host configuration file> -n <netmaster IP> -a <ansible options> -e <ansible key> -i <install scheduler stack> -z <installer config file>"
+  echo "./install_swarm.sh -f <host configuration file> -n <netmaster IP> -a <ansible options> -e <ansible key> -i <install scheduler stack> -z <installer config file>  -m <network mode - standalone/aci> -d <fwd mode - routing/bridge> -v <ACI image>"
 
   echo ""
   exit 1
@@ -43,7 +43,7 @@ mkdir -p $src_conf_path
 # Check for docker only when requested to install the scheduler stack
 # Else there are no pre-requisites on the host
 install_scheduler=""
-while getopts ":f:z:c:k:n:a:e:im:d:" opt; do
+while getopts ":f:z:c:k:n:a:e:im:d:v:" opt; do
   case $opt in
     f)
       cp $OPTARG $host_contiv_config
@@ -75,6 +75,9 @@ while getopts ":f:z:c:k:n:a:e:im:d:" opt; do
     i) 
       check_for_prereqs
       install_scheduler="-i"
+      ;;
+    v)
+      aci_image=$OPTARG
       ;;
     :)
       echo "An argument required for $OPTARG was not passed"
@@ -113,10 +116,16 @@ if [[ ! -f $host_tls_cert || ! -f $host_tls_key ]]; then
       -key $host_tls_key \
       -out $host_tls_cert \
       -subj "/C=US/ST=CA/L=San Jose/O=CPSG/OU=IT Department/CN=auth-local.cisco.com"
-fi 
+fi
+
+if [ "$aci_image" != "" ];then
+  aci_param="-v $aci_image"
+else
+  aci_param=""
+fi
 
 echo "Starting the ansible container"
-docker run --rm -v $src_conf_path:$container_conf_path contiv/install:__CONTIV_INSTALL_VERSION__ sh -c "./install/ansible/install.sh -n $netmaster -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode" 
+docker run --rm -v $src_conf_path:$container_conf_path contiv/install:__CONTIV_INSTALL_VERSION__ sh -c "./install/ansible/install.sh -n $netmaster -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param" 
 rm -rf $src_conf_path
 
 echo "Installation is complete"
