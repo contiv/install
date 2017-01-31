@@ -21,7 +21,7 @@ netmaster=""
 
 usage () {
   echo "Usage:"
-  echo "./uninstall.sh -n <netmaster IP> -a <ansible options> -i <uninstall scheduler stack> -m <network mode - standalone/aci> -f <fwd mode - routing/bridge>"
+  echo "./uninstall.sh -n <netmaster IP> -a <ansible options> -i <uninstall scheduler stack> -m <network mode - standalone/aci> -d <fwd mode - routing/bridge> -v <ACI image>"
 
   echo ""
   exit 1
@@ -34,7 +34,7 @@ error_ret() {
   exit 1
 }
 
-while getopts ":n:a:im:d:" opt; do
+while getopts ":n:a:im:d:v:" opt; do
     case $opt in
        n)
           netmaster=$OPTARG
@@ -50,6 +50,9 @@ while getopts ":n:a:im:d:" opt; do
           ;;
        d)
           fwd_mode=$OPTARG
+          ;;
+       v)
+          aci_image=$OPTARG
           ;;
        :)
           echo "An argument required for $OPTARG was not passed"
@@ -87,6 +90,10 @@ sed -i.bak "s#__CLUSTER_STORE__#$cluster#g" $env_file
 if [[ -f $installer_config ]]; then
   mv $env_file $env_file.bak
   cp $installer_config $env_file
+fi
+
+if [ "$aci_image" != "" ];then
+  sed -i.bak "s#.*aci_gw_image.*#\"aci_gw_image\":\"$aci_image\",#g" $env_file
 fi
 
 echo "Uninstalling Contiv"
