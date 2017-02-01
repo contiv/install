@@ -5,7 +5,7 @@ install_version="contiv-${BUILD_VERSION:-devbuild}"
 cd release && tar -xvzf $install_version.tgz
 cd $install_version
 docker load -i contiv-install-image.tar
-./install/ansible/install_swarm.sh -f install/ansible/cfg.yml -n $contiv_master -e ../../cluster/export/insecure_private_key -i
+./install/ansible/install_swarm.sh -f install/ansible/cfg.yml -e ../../cluster/export/insecure_private_key -u vagrant -i
 
 # Wait for CONTIV to start up
 sleep 60

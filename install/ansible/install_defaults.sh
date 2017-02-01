@@ -1,4 +1,4 @@
-src_conf_path=${src_conf_path:-$(mktemp -d /tmp/contiv_install_XXXXX)}
+src_conf_path=$(pwd)/config
 container_conf_path=/var/contiv
 
 # These paths are in the installer container

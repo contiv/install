@@ -3,7 +3,6 @@
 
 # Ignore ansible ssh host key checking by default
 export ANSIBLE_HOST_KEY_CHECKING=False
-src_conf_path=""
 
 # Scheduler provider can be in kubernetes or swarm mode
 scheduler_provider=${CONTIV_SCHEDULER_PROVIDER:-"native-swarm"}
@@ -64,10 +63,6 @@ while getopts ":n:a:im:d:v:" opt; do
      esac
 done
 
-if [ "$netmaster" = "" ]; then
-  usage
-fi
-
 echo "Generating Ansible configuration"
 inventory=".gen"
 mkdir -p $inventory
@@ -76,6 +71,16 @@ node_info="$inventory/contiv_nodes"
 
 ./genInventoryFile.py $contiv_config $host_inventory $node_info $contiv_network_mode $fwd_mode
 
+if [ "$netmaster" = "" ]; then
+  # Use the first master node as netmaster
+  netmaster=$(grep -A 5 netplugin-master $host_inventory | grep -m 1 ansible_ssh_host | awk '{print $2}' | awk -F "=" '{print $2}' | xargs)
+  echo "Using $netmaster as the master node"
+fi
+
+if [ "$netmaster" = "" ]; then
+  usage
+fi
+
 cluster="etcd://$netmaster:2379"
 if [ "$cluster_store" != "" ];then
   cluster=$cluster_store
@@ -83,7 +88,14 @@ fi
 
 ansible_path=./ansible
 env_file=install/ansible/env.json
-sed -i.bak "s/__NETMASTER_IP__/$netmaster/g" $env_file
+# Get the netmaster control interface
+netmaster_control_if=$(grep -A10 $netmaster $contiv_config | grep -m 1 control | awk -F ":" '{print $2}' | xargs)
+# Get the ansible node
+node_name=$(grep $netmaster $host_inventory | awk '{print $1}' | xargs)
+# Get the service VIP for netmaster for the control interface
+service_vip=$(ansible $node_name -m setup $ans_opts -i $host_inventory | grep -A 100 ansible_$netmaster_control_if | grep -A 4 ipv4 | grep address | awk -F \" '{print $4}'| xargs)
+sed -i.bak "s/__NETMASTER_IP__/$service_vip/g" $env_file
+
 sed -i.bak "s#__CLUSTER_STORE__#$cluster#g" $env_file
 
 # Override extra vars file, if one is provided.

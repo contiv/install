@@ -52,6 +52,8 @@ release_dir="release"
 output_dir="$release_dir/contiv-$VERSION/"
 output_file="$release_dir/contiv-$VERSION.tgz"
 tmp_output_file="contiv-$VERSION.tgz"
+full_output_file="$release_dir/contiv-full-$VERSION.tgz"
+tmp_full_output_file="contiv-full-$VERSION.tgz"
 
 # Clean older dist folders and release binaries
 rm -rf $output_dir
@@ -68,7 +70,7 @@ cp -rf scripts/generate-certificate.sh $output_dir
 # This is maybe optional - but assume we need it for
 curl -sSL https://github.com/contiv/netplugin/releases/download/$contiv_version/netplugin-$contiv_version.tar.bz2 -o $output_dir/netplugin-$contiv_version.tar.bz2
 pushd $output_dir
-tar xvfj netplugin-$contiv_version.tar.bz2 netctl
+tar xf netplugin-$contiv_version.tar.bz2 netctl
 rm -f netplugin-$contiv_version.tar.bz2
 popd
 
@@ -110,6 +112,7 @@ ansible_spec=$output_dir/install/ansible/Dockerfile
 ansible_base=$output_dir/install/ansible/Dockerfile.base
 docker build -t contiv_install_base -f $ansible_base $output_dir
 docker build --no-cache -t contiv/install:$VERSION -f $ansible_spec $output_dir
+
 rm -rf $output_dir/scripts
 if [ "$DEV_IMAGE_NAME" = "$VERSION" ]; then
   # This is a dev build, so save the images locally.
@@ -120,11 +123,33 @@ else
   echo "**************************************************************************************************"
 fi
 
-# Clean up the Dockerfile, this is not part of the release bits.
+# Clean up the Dockerfiles, they are not part of the release bits.
 rm -f $ansible_spec
+rm -f $ansible_base
 
-tar -cvzf $tmp_output_file -C $release_dir .
+# Create the binary cache folder
+binary_cache=$output_dir/contiv_cache
+mkdir -p $binary_cache
+
+# Create the minimal tar bundle
+tar cvzf $tmp_output_file -C $release_dir .
+
+# Save the auth proxy & aci-gw images for packaging the full docker images with contiv install binaries
+docker pull contiv/auth_proxy:$auth_proxy_version
+docker save contiv/auth_proxy:$auth_proxy_version -o $binary_cache/auth-proxy-image.tar
+docker pull contiv/aci-gw:$aci_gw_version
+docker save contiv/aci-gw:$aci_gw_version -o $binary_cache/aci-gw-image.tar
+curl -ksL -o $binary_cache/openvswitch-2.3.1-2.el7.x86_64.rpm  https://cisco.box.com/shared/static/zzmpe1zesdpf270k9pml40rlm4o8fs56.rpm
+curl -ksL -o $binary_cache/v1dvgoboo5zgqrtn6tu27vxeqtdo2bdl.deb https://cisco.box.com/shared/static/v1dvgoboo5zgqrtn6tu27vxeqtdo2bdl.deb
+curl -ksL -o $binary_cache/ymbuwvt2qprs4tquextw75b82hyaxwon.deb https://cisco.box.com/shared/static/ymbuwvt2qprs4tquextw75b82hyaxwon.deb
+curl -sL -o $binary_cache/netplugin-$contiv_version.tar.bz2 https://github.com/contiv/netplugin/releases/download/$contiv_version/netplugin-$contiv_version.tar.bz2
+
+# Create the full tar bundle
+tar cvzf $tmp_full_output_file -C $release_dir .
+
+
 mv $tmp_output_file $output_file
+mv $tmp_full_output_file $full_output_file
 rm -rf $output_dir
 
 echo "Success: Contiv Installer version $VERSION is available at $output_file"
