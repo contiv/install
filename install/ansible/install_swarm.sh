@@ -103,7 +103,11 @@ else
 fi
 
 echo "Starting the ansible container"
-image_name=contiv/install:__CONTIV_INSTALL_VERSION__
-docker run --rm -v $src_conf_path:$container_conf_path -v $(pwd)/contiv_cache:/var/contiv_cache $image_name sh -c "./install/ansible/install.sh $netmaster_param -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param"
+image_name="contiv/install:__CONTIV_INSTALL_VERSION__"
+install_mount="-v $(pwd)/install:/install"
+ansible_mount="-v $(pwd)/ansible:/ansible"
+cache_mount="-v $(pwd)/contiv_cache:/var/contiv_cache"
+mounts="$install_mount $ansible_mount $cache_mount"
+docker run --rm -v $src_conf_path:$container_conf_path $mounts $image_name sh -c "./install/ansible/install.sh $netmaster_param -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param"
 
 rm -rf $src_conf_path

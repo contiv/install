@@ -20,7 +20,7 @@ netmaster=""
 
 usage () {
   echo "Usage:"
-  echo "./uninstall.sh -n <netmaster IP> -a <ansible options> -i <uninstall scheduler stack> -m <network mode - standalone/aci> -d <fwd mode - routing/bridge> -v <ACI image>"
+  echo "./uninstall.sh -n <netmaster IP> -a <ansible options> -i <uninstall scheduler stack> -m <network mode - standalone/aci> -d <fwd mode - routing/bridge> -v <ACI image>  -r <cleanup containers/etcd state> -g <cleanup docker images>"
 
   echo ""
   exit 1
@@ -33,7 +33,10 @@ error_ret() {
   exit 1
 }
 
-while getopts ":n:a:im:d:v:" opt; do
+reset="false"
+reset_images="false"
+
+while getopts ":n:a:im:d:v:rg" opt; do
     case $opt in
        n)
           netmaster=$OPTARG
@@ -53,6 +56,12 @@ while getopts ":n:a:im:d:v:" opt; do
        v)
           aci_image=$OPTARG
           ;;
+       r)
+          reset="true"
+          ;;
+       g)
+          reset_images="true"
+          ;;
        :)
           echo "An argument required for $OPTARG was not passed"
           usage
@@ -69,7 +78,7 @@ mkdir -p $inventory
 host_inventory="$inventory/contiv_hosts"
 node_info="$inventory/contiv_nodes"
 
-./genInventoryFile.py $contiv_config $host_inventory $node_info $contiv_network_mode $fwd_mode
+./install/genInventoryFile.py $contiv_config $host_inventory $node_info $contiv_network_mode $fwd_mode
 
 if [ "$netmaster" = "" ]; then
   # Use the first master node as netmaster
@@ -95,6 +104,10 @@ node_name=$(grep $netmaster $host_inventory | awk '{print $1}' | xargs)
 # Get the service VIP for netmaster for the control interface
 service_vip=$(ansible $node_name -m setup $ans_opts -i $host_inventory | grep -A 100 ansible_$netmaster_control_if | grep -A 4 ipv4 | grep address | awk -F \" '{print $4}'| xargs)
 sed -i.bak "s/__NETMASTER_IP__/$service_vip/g" $env_file
+
+sed -i.bak "s/.*docker_reset_container_state.*/\"docker_reset_container_state\":$reset,/g" $env_file
+sed -i.bak "s/.*docker_reset_image_state.*/\"docker_reset_image_state\":$reset_images,/g" $env_file
+sed -i.bak "s/.*etcd_cleanup_state.*/\"etcd_cleanup_state\":$reset,/g" $env_file
 
 sed -i.bak "s#__CLUSTER_STORE__#$cluster#g" $env_file
 

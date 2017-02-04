@@ -69,7 +69,7 @@ mkdir -p $inventory
 host_inventory="$inventory/contiv_hosts"
 node_info="$inventory/contiv_nodes"
 
-./genInventoryFile.py $contiv_config $host_inventory $node_info $contiv_network_mode $fwd_mode
+./install/genInventoryFile.py $contiv_config $host_inventory $node_info $contiv_network_mode $fwd_mode
 
 if [ "$netmaster" = "" ]; then
   # Use the first master node as netmaster
