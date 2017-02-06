@@ -2,8 +2,9 @@
 
 set -euo pipefail
 
-release="1.0.0-alpha"
-url="https://192.168.2.10:10000" # master_ip copied from Vagrantfile
+release="${CONTIV_RELEASE_VER:-1.0.0-alpha}"
+svc_ip="${MASTER_IP:-192.168.2.10}"
+url="https://${svc_ip}:10000" # master_ip copied from Vagrantfile
 
 VAGRANT_USE_KUBEADM=1 make cluster
 
@@ -13,7 +14,7 @@ read -r -d '' COMMANDS <<-EOF
     curl -L -O https://github.com/contiv/install/releases/download/${release}/contiv-${release}.tgz && \\
     tar xf contiv-${release}.tgz && \\
     cd contiv-${release} && \\
-    sudo ./install/k8s/install.sh -n 0.0.0.0
+    sudo ./install/k8s/install.sh -n ${svc_ip}
 EOF
 set -e
 
