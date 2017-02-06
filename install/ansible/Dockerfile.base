@@ -1,9 +1,0 @@
-FROM alpine
-MAINTAINER contiv
-
-RUN apk --update add python openssl ca-certificates git
-RUN apk --update add --virtual build-dependencies \
-                python-dev libffi-dev openssl-dev build-base
-RUN apk --update add py2-pip
-RUN pip install --upgrade pip cffi
-RUN pip install ansible==2.2.0.0

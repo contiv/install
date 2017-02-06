@@ -160,8 +160,8 @@ if [ "$tls_cert" = "" ]; then
   mkdir -p /var/contiv
   mkdir -p ./local_certs
   
-  chmod +x ./generate-certificate.sh
-  ./generate-certificate.sh
+  chmod +x ./install/generate-certificate.sh
+  ./install/generate-certificate.sh
   tls_cert=./local_certs/cert.pem
   tls_key=./local_certs/local.key
 fi

@@ -14,7 +14,7 @@ if [ ! docker version > /dev/null 2>&1 ]; then
 fi
 usage() {
   echo "Usage:"
-  echo "./uninstall_swarm.sh -f <host configuration file> -n <netmaster IP> -a <ansible options> -e <ssh key> -u <ssh user> -i <uninstall scheduler stack> -z <installer config file> -m <network mode - standalone/aci> -d <fwd mode - routing/bridge>  -v <ACI image>"
+  echo "./uninstall_swarm.sh -f <host configuration file> -n <netmaster IP> -a <ansible options> -e <ssh key> -u <ssh user> -i <uninstall scheduler stack> -z <installer config file> -m <network mode - standalone/aci> -d <fwd mode - routing/bridge>  -v <ACI image> -r <cleanup containers/etcd state> -g <cleanup docker images>"
 
   echo ""
   exit 1
@@ -22,7 +22,8 @@ usage() {
 
 mkdir -p $src_conf_path
 uninstall_scheduler=""
-while getopts ":f:z:n:a:e:im:d:v:u:" opt; do
+reset_params=""
+while getopts ":f:z:n:a:e:im:d:v:u:rg" opt; do
   case $opt in
     f)
       cp $OPTARG $host_contiv_config
@@ -50,6 +51,12 @@ while getopts ":f:z:n:a:e:im:d:v:u:" opt; do
       ;;
     v)
       aci_image=$OPTARG
+      ;;
+    r)
+      reset_params="-r $reset_params"
+      ;;
+    g)
+      reset_params="-g $reset_params"
       ;;
     i) 
       echo "Uninstalling docker will fail if the uninstallation is being run from a node in the cluster."
@@ -91,7 +98,12 @@ else
 fi
 
 echo "Starting the ansible container"
-docker run --rm -v $src_conf_path:$container_conf_path contiv/install:__CONTIV_INSTALL_VERSION__ sh -c "./install/ansible/uninstall.sh $netmaster_param -a \"$ans_opts\" $uninstall_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param"
+image_name="contiv/install:__CONTIV_INSTALL_VERSION__"
+install_mount="-v $(pwd)/install:/install"
+ansible_mount="-v $(pwd)/ansible:/ansible"
+cache_mount="-v $(pwd)/contiv_cache:/var/contiv_cache"
+mounts="$install_mount $ansible_mount $cache_mount"
+docker run --rm -v $src_conf_path:$container_conf_path $mounts $image_name sh -c "./install/ansible/uninstall.sh $netmaster_param -a \"$ans_opts\" $uninstall_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param $reset_params"
 rm -rf $src_conf_path
 
 echo "Uninstallation is complete"

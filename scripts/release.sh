@@ -65,13 +65,20 @@ rm -rf $output_file
 # Top level install.sh which will either take k8s/swarm install params and do the required.
 mkdir -p $output_dir
 cp -rf install $output_dir
-cp -rf scripts/generate-certificate.sh $output_dir
+cp -rf scripts/generate-certificate.sh $output_dir/install
+
+# Get the ansible support files
+curl -sSL -o $output_dir/install/genInventoryFile.py https://raw.githubusercontent.com/contiv/demo/master/net/extras/genInventoryFile.py
+chmod +x $output_dir/install/genInventoryFile.py
+chmod +x $output_dir/install/generate-certificate.sh
+
 
 # This is maybe optional - but assume we need it for
 curl -sSL https://github.com/contiv/netplugin/releases/download/$contiv_version/netplugin-$contiv_version.tar.bz2 -o $output_dir/netplugin-$contiv_version.tar.bz2
 pushd $output_dir
 tar xf netplugin-$contiv_version.tar.bz2 netctl
 rm -f netplugin-$contiv_version.tar.bz2
+git clone http://github.com/neelimamukiri/ansible -b state_change_local_binaries
 popd
 
 # Replace versions
@@ -98,20 +105,19 @@ sed -i.bak "s/__ETCD_VERSION__/$etcd_version/g" $ansible_env
 chmod +x $output_dir/install/install.sh
 chmod +x $k8s_yaml_dir/install.sh
 chmod +x $k8s_yaml_dir/uninstall.sh
-chmod +x $ansible_yaml_dir/install_swarm.sh
 sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$VERSION/g" $ansible_yaml_dir/install_swarm.sh
-chmod +x $ansible_yaml_dir/uninstall_swarm.sh
 sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$VERSION/g" $ansible_yaml_dir/uninstall_swarm.sh
-
+chmod +x $ansible_yaml_dir/install_swarm.sh
+chmod +x $ansible_yaml_dir/uninstall_swarm.sh
+chmod +x $output_dir/install/ansible/install.sh
+chmod +x $output_dir/install/ansible/uninstall.sh
 # Cleanup the backup files
 rm -f $k8s_yaml_dir/*.bak
 rm -f $ansible_yaml_dir/*.bak
 
-# Build the docker container for the swarm installation
+# Build the docker container for ansible installation
 ansible_spec=$output_dir/install/ansible/Dockerfile
-ansible_base=$output_dir/install/ansible/Dockerfile.base
-docker build -t contiv_install_base -f $ansible_base $output_dir
-docker build --no-cache -t contiv/install:$VERSION -f $ansible_spec $output_dir
+docker build -t contiv/install:$VERSION -f $ansible_spec $output_dir
 
 rm -rf $output_dir/scripts
 if [ "$DEV_IMAGE_NAME" = "$VERSION" ]; then
@@ -125,7 +131,6 @@ fi
 
 # Clean up the Dockerfiles, they are not part of the release bits.
 rm -f $ansible_spec
-rm -f $ansible_base
 
 # Create the binary cache folder
 binary_cache=$output_dir/contiv_cache
@@ -135,14 +140,23 @@ mkdir -p $binary_cache
 tar cvzf $tmp_output_file -C $release_dir .
 
 # Save the auth proxy & aci-gw images for packaging the full docker images with contiv install binaries
-docker pull contiv/auth_proxy:$auth_proxy_version
+if [ "$(docker images -q contiv/auth_proxy:$auth_proxy_version 2>/dev/null)" == "" ]; then
+  docker pull contiv/auth_proxy:$auth_proxy_version
+fi
 docker save contiv/auth_proxy:$auth_proxy_version -o $binary_cache/auth-proxy-image.tar
-docker pull contiv/aci-gw:$aci_gw_version
+if [ "$(docker images -q contiv/aci-gw:$aci_gw_version 2>/dev/null)" == "" ]; then
+  docker pull contiv/aci-gw:$aci_gw_version
+fi
 docker save contiv/aci-gw:$aci_gw_version -o $binary_cache/aci-gw-image.tar
+
 curl -ksL -o $binary_cache/openvswitch-2.3.1-2.el7.x86_64.rpm  https://cisco.box.com/shared/static/zzmpe1zesdpf270k9pml40rlm4o8fs56.rpm
 curl -ksL -o $binary_cache/v1dvgoboo5zgqrtn6tu27vxeqtdo2bdl.deb https://cisco.box.com/shared/static/v1dvgoboo5zgqrtn6tu27vxeqtdo2bdl.deb
 curl -ksL -o $binary_cache/ymbuwvt2qprs4tquextw75b82hyaxwon.deb https://cisco.box.com/shared/static/ymbuwvt2qprs4tquextw75b82hyaxwon.deb
 curl -sL -o $binary_cache/netplugin-$contiv_version.tar.bz2 https://github.com/contiv/netplugin/releases/download/$contiv_version/netplugin-$contiv_version.tar.bz2
+
+env_file=$output_dir/install/ansible/env.json
+sed -i.bak "s#.*auth_proxy_local_install.*#  \"auth_proxy_local_install\": True,#g" $env_file
+sed -i.bak "s#.*contiv_network_local_install.*#  \"contiv_network_local_install\": True#g" $env_file
 
 # Create the full tar bundle
 tar cvzf $tmp_full_output_file -C $release_dir .
