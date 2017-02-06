@@ -1,4 +1,6 @@
-# This is the installation script for Cisco Unified Container Networking platform.
+#!/bin/bash
+
+# This is the installation script for Contiv.
 
 . ./install/ansible/install_defaults.sh
 
@@ -6,36 +8,65 @@
 ans_opts=""
 ans_user="vagrant"
 ans_key=$src_conf_path/insecure_private_key
+install_scheduler=""
 
 # Check for docker
-if [ ! docker version > /dev/null 2>&1 ]; then
+
+if ! docker version > /dev/null 2>&1; then
   echo "docker not found. Please retry after installing docker."
   exit 1
 fi
 
 usage() {
-  echo "Usage:"
-  echo "./install_swarm.sh -f <host configuration file> -n <netmaster IP> -a <ansible options> -e <ssh key> -u <ssh user> -i <install scheduler stack> -z <installer config file>  -m <network mode - standalone/aci> -d <fwd mode - routing/bridge> -v <ACI image>"
+  cat << EOF
+Contiv Installer for Docker/Swarm based setups.
 
-  echo ""
+Installer:
+Usage: ./install/ansible/install_swarm.sh OPTIONS
+
+Mandatory Options:
+-f   string     Configuration file listing the hostnames with the control and data interfaces and optionally ACI parameters
+-e   string     SSH key to connect to the hosts
+-u   string     SSH User
+-i              Install the scheduler stack 
+
+Additional Options:
+-m   string     Network Mode for the Contiv installation (“standalone” or “aci”). Default mode is “standalone” and should be used for non ACI-based setups
+-d   string     Forwarding mode (“routing” or “bridge”). Default mode is “bridge”
+-c   string
+-k   string
+
+Advanced Options:
+-v   string     ACI Image (default is contiv/aci-gw:latest). Use this to specify a specific version of the ACI Image.
+-n   string     DNS name/IP address of the host to be used as the net master service VIP.
+
+Additional parameters can also be updated in install/ansible/env.json file.
+
+Examples:
+
+1. Install Contiv with Docker Swarm on hosts specified by cfg.yml. 
+./install/ansible/install_swarm.sh -f cfg.yml -e ~/ssh_key -u admin -i
+
+2. Install Contiv on hosts specified by cfg.yml. Docker should be pre-installed on the hosts.
+./install/ansible/install_swarm.sh -f cfg.yml -e ~/ssh_key -u admin
+
+3. Install Contiv with Docker Swarm on hosts specified by cfg.yml in ACI mode.
+./install/ansible/install_swarm.sh -f cfg.yml -e ~/ssh_key -u admin -i -m aci
+
+4. Install Contiv with Docker Swarm on hosts specified by cfg.yml in ACI mode, using routing as the forwarding mode.
+./install/ansible/install_swarm.sh -f cfg.yml -e ~/ssh_key -u admin -i -m aci -d routing
+
+EOF
   exit 1
 }
 
-mkdir -p $src_conf_path
-install_scheduler=""
-while getopts ":f:z:c:k:n:a:e:im:d:v:u:" opt; do
+# Create the config folder to be shared with the install container.
+mkdir -p "$src_conf_path"
+
+while getopts ":f:n:a:e:im:d:v:u:c:k:" opt; do
   case $opt in
     f)
-      cp $OPTARG $host_contiv_config
-      ;;
-    z)
-      cp $OPTARG $host_installer_config
-      ;;
-    c)
-      cp $OPTARG $host_tls_cert
-      ;;
-    k)
-      cp $OPTARG $host_tls_key
+      cp "$OPTARG" "$host_contiv_config"
       ;;
     n)
       netmaster=$OPTARG
@@ -55,11 +86,17 @@ while getopts ":f:z:c:k:n:a:e:im:d:v:u:" opt; do
     d)
       fwd_mode=$OPTARG
       ;;
+    v)
+      aci_image=$OPTARG
+      ;;
     i) 
       install_scheduler="-i"
       ;;
-    v)
-      aci_image=$OPTARG
+    c)
+      cp "$OPTARG" "$host_tls_cert"
+      ;;
+    k)
+      cp "$OPTARG" "$host_tls_key"
       ;;
     :)
       echo "An argument required for $OPTARG was not passed"
@@ -82,32 +119,34 @@ else
   netmaster_param=""
 fi
 
-if [[ -f $ans_key ]]; then
-  cp $ans_key $host_ans_key
-fi
-ans_opts="$ans_opts --private-key $def_ans_key -u $ans_user"
-
-if [[ ! -f $host_tls_cert || ! -f $host_tls_key ]]; then
-  echo "Generating local certs for Contiv Proxy"
-  openssl genrsa -out $host_tls_key 2048 >/dev/null 2>&1
-  openssl req -new -x509 -sha256 -days 3650 \
-      -key $host_tls_key \
-      -out $host_tls_cert \
-      -subj "/C=US/ST=CA/L=San Jose/O=CPSG/OU=IT Department/CN=auth-local.cisco.com"
-fi
-
 if [ "$aci_image" != "" ];then
   aci_param="-v $aci_image"
 else
   aci_param=""
 fi
 
-echo "Starting the ansible container"
+# Copy the key to config folder
+if [[ -f $ans_key ]]; then
+  cp "$ans_key" "$host_ans_key"
+fi
+
+ans_opts="$ans_opts --private-key $def_ans_key -u $ans_user"
+
+# Generate SSL certs for auth proxy
+if [[ ! -f "$host_tls_cert" || ! -f "$host_tls_key" ]]; then
+  echo "Generating local certs for Contiv Proxy"
+  openssl genrsa -out "$host_tls_key" 2048 >/dev/null 2>&1
+  openssl req -new -x509 -sha256 -days 3650 \
+      -key "$host_tls_key" \
+      -out "$host_tls_cert" \
+      -subj "/C=US/ST=CA/L=San Jose/O=CPSG/OU=IT Department/CN=auth-local.cisco.com"
+fi
+
+echo "Starting the installer container"
 image_name="contiv/install:__CONTIV_INSTALL_VERSION__"
 install_mount="-v $(pwd)/install:/install"
 ansible_mount="-v $(pwd)/ansible:/ansible"
+config_mount="-v $src_conf_path:$container_conf_path"
 cache_mount="-v $(pwd)/contiv_cache:/var/contiv_cache"
-mounts="$install_mount $ansible_mount $cache_mount"
-docker run --rm -v $src_conf_path:$container_conf_path $mounts $image_name sh -c "./install/ansible/install.sh $netmaster_param -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param"
-
-rm -rf $src_conf_path
+mounts="$install_mount $ansible_mount $cache_mount $config_mount"
+docker run --rm $mounts $image_name sh -c "./install/ansible/install.sh $netmaster_param -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param"

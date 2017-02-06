@@ -1,3 +1,5 @@
+#!/bin/bash
+
 if [ "$1" = "-h" ]; then
   echo "Usage: ./install/k8s/uninstall.sh to uninstall contiv"
   echo "       ./install/k8s/uninstall.sh etcd-cleanup to uninstall contiv and cleanup contiv data"
@@ -12,3 +14,6 @@ kubectl delete -f .contiv.yaml
 if [ "$1" = "etcd-cleanup" ]; then
   rm -rf /var/etcd/contiv-data
 fi
+
+# Re-creating the kube-dns deployment
+kubectl create -f kube-dns.yaml
