@@ -17,6 +17,11 @@ cluster: cluster-destroy
 cluster-destroy:
 	cd cluster && vagrant destroy -f
 
+# demo-k8s brings up a cluster with k8s, runs the installer on it, and shows the URL
+# of the demo Contiv Admin Console which was set up
+demo-k8s:
+	@bash ./scripts/demo-k8s.sh
+
 # Create a release and test the release installation on a vagrant cluster
 # TODO: The vagrant part of this can be optimized by taking snapshots instead
 # of creating a new set of VMs for each case
