@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-release="${CONTIV_RELEASE_VER:-1.0.0-alpha}"
+release="${CONTIV_RELEASE_VER:-1.0.0-beta.1}"
 svc_ip="${MASTER_IP:-192.168.2.10}"
 url="https://${svc_ip}:10000" # master_ip copied from Vagrantfile
 
