@@ -59,17 +59,81 @@ Here is the reference layout. All the nodes need to be accessible to the install
                 │                                                                                               │
                 └─────────────────────────────────────────────── SSH  ──────────────────────────────────────────┘
                                                                                                                  
+```
+
+## How to use Installer :
+
+To get installer please refer : https://github.com/contiv/install/releases
+
+Download the install bundle, save it and extract it on Install host.
+
+### Installer Usage:
+
+`./install/ansible/install_swarm.sh -f <host configuration file>  -e <ssh key> -u <ssh user> OPTIONS`
+
+Options:
+```
+-f   string                 Configuration file listing the hostnames with the control and data interfaces and optionally ACI parameters
+-e  string                  SSH key to connect to the hosts
+-u  string                  SSH User
+-i                          Install the swarm scheduler stack
+
+Options:
+-m  string                  Network Mode for the Contiv installation (“standalone” or “aci”). Default mode is “standalone” and should be used for non ACI-based setups
+-d   string                 Forwarding mode (“routing” or “bridge”). Default mode is “bridge”
+
+Advanced Options:
+-v   string                 ACI Image (default is contiv/aci-gw:latest). Use this to specify a specific version of the ACI Image.
+-n   string                 DNS name/IP address of the host to be used as the net master  service VIP.
 
 ```
-* Download the install bundle `<TODO add a location here>`. This is of the form contiv-VERSIONTAG.tgz.
-* Extract the install bundle `tar xvzf contiv-VERSIONTAG.tgz`  
-* cd to the extracted folder `cd contiv-VERSIONTAG`
-* To load the installer container image run `docker load -i contiv-install-image.tar`
-* Run `./install/ansible/install_swarm.sh -f <host config file> -n <contiv master> -e <ansible ssh key> -a <additional ansible options>` to install Contiv without the scheduler stack.
-* Run `./install/ansible/install_swarm.sh -f <host config file> -n <contiv master> -e <ansible ssh key> -a <additional ansible options> -i` to install Contiv with the scheduler stack.
-* To specify a user to user for the Ansible ssh login, specify "-u <username>" as the additional andible option.
-* Example host config file is available at install/ansible/cfg.yml
-* To see additional install options run `./install/ansible/install_swarm.sh`.
+
+Additional parameters can also be updated in install/ansible/env.json file.
+
+### Examples:
+
+```
+1. Install Contiv with Docker Swarm on hosts specified by cfg.yml.
+./install/ansible/install_swarm.sh -f cfg.yml -e ~/ssh_key -u admin -i
+
+2. Install Contiv on hosts specified by cfg.yml. Docker should be pre-installed on the hosts.
+./install/ansible/install_swarm.sh -f cfg.yml -e ~/ssh_key -u admin
+
+3. Install Contiv with Docker Swarm on hosts specified by cfg.yml in ACI mode.
+./install/ansible/install_swarm.sh -f cfg.yml -e ~/ssh_key -u admin -i -m aci
+
+4. Install Contiv with Docker Swarm on hosts specified by cfg.yml in ACI mode, using routing as the forwarding mode.
+./install/ansible/install_swarm.sh -f cfg.yml -e ~/ssh_key -u admin -i -m aci -d routing
+
+```
+
+### Uninstaller Usage: 
+
+` ./install/ansible/uninstall_swarm.sh -f <host configuration file>  -e <ssh key> -u <ssh user> OPTIONS`
+
+Options: 
+```
+-f   string            Configuration file listing the hostnames with the control and data interfaces and optionally ACI parameters
+-e  string             SSH key to connect to the hosts
+-u  string             SSH User
+-i                     Uninstall the scheduler stack
+
+Options:
+-r                     Reset etcd state and remove docker containers
+-g                     Remove docker images
+```
+
+Additional parameters can also be updated in install/ansible/env.json file.
+
+```
+Examples:
+1. Uninstall Contiv and Docker Swarm on hosts specified by cfg.yml.
+./install/ansible/uninstall_swarm.sh -f cfg.yml -e ~/ssh_key -u admin -i
+2. Uninstall Contiv and Docker Swarm on hosts specified by cfg.yml for an ACI setup.
+./install/ansible/uninstall_swarm.sh -f cfg.yml -e ~/ssh_key -u admin -i -m aci
+3. Uninstall Contiv and Docker Swarm on hosts specified by cfg.yml for an ACI setup, remove all containers and Contiv etcd state
+./install/ansible/uninstall_swarm.sh -f cfg.yml -e ~/ssh_key -u admin -i -m aci -r
+```
 
 ## Kubernetes 1.4 installation
 
