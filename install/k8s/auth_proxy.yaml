@@ -33,24 +33,6 @@ spec:
         - name: contiv-api-proxy
           image: contiv/auth_proxy:__API_PROXY_VERSION__
           args:
-            - --data-store-address=$(CONTIV_ETCD)
-            - --initial-setup
-          env:
-            - name: CONTIV_ETCD
-              valueFrom:
-                configMapKeyRef:
-                  name: contiv-config
-                  key: cluster_store
-          securityContext:
-            privileged: false
-          volumeMounts:
-            - mountPath: /var/contiv
-              name: var-contiv
-              readOnly: false
-
-        - name: contiv-api-init
-          image: contiv/auth_proxy:__API_PROXY_VERSION__
-          args:
             - --tls-key-file=/var/contiv/auth_proxy_key.pem
             - --tls-certificate=/var/contiv/auth_proxy_cert.pem
             - --data-store-address=$(CONTIV_ETCD)
