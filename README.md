@@ -59,6 +59,7 @@ Here is the reference layout. All the nodes need to be accessible to the install
                 │                                                                                               │
                 └─────────────────────────────────────────────── SSH  ──────────────────────────────────────────┘
                                                                                                                  
+```
 
 ## How to use Installer :
 
