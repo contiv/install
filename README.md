@@ -63,6 +63,9 @@ Here is the reference layout. All the nodes need to be accessible to the install
 ```
 
 * `curl -L -O https://github.com/contiv/install/releases/download/$VERSION/contiv-$VERSION.tgz`
+* To use a local installation for Contiv components you may use the larger version of the installer 
+ using `curl -L -O https://github.com/contiv/install/releases/download/$VERSION/contiv-full-$VERSION.tgz`.
+ This should be used only in cases where accessibility to network is slow.
 * `tar xf contiv-$VERSION.tgz`
 * `cd contiv-$VERSION`
 * Install Contiv with Docker Swarm
@@ -82,6 +85,7 @@ Here is the reference layout. All the nodes need to be accessible to the install
 
 * Supported operating systems are CentOS 7.x or RHEL 7.x.
 * Install kubernetes 1.4 or higher using http://kubernetes.io/docs/getting-started-guides/kubeadm/.
+* Contiv service-cidr is currently 10.254.0.0/16. So `kubeadm init` step needs to be called with `--service-cidr 10.254.0.0/16` parameter.
 * Step (3/4) in the kubeadm install guide has to be replaced with the Contiv Installation below.
 * Contiv Installation can be done before or after (4/4) in the kubeadm install guide.
 
@@ -94,6 +98,4 @@ Here is the reference layout. All the nodes need to be accessible to the install
   where $CONTIV_MASTER is the IP to be used for the Contiv proxy.
 * To see additional install options and examples, run `./install/ansible/install.sh -h`.
 * Run `sudo ./install/k8s/uninstall.sh` to uninstall Contiv.
-
-
 

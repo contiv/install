@@ -237,7 +237,7 @@ echo "$netmaster netmaster" >> /etc/hosts
 echo "To customize the installation press Ctrl+C and edit $contiv_yaml."
 sleep 5
 chmod +x ./netctl
-mv ./netctl /usr/local/bin/
+mv ./netctl /usr/bin/
 # Install Contiv
 kubectl apply -f $contiv_yaml
 if [ "$fwd_mode" = "routing" ]; then
