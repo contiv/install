@@ -29,7 +29,7 @@ echo "export http_proxy='$1'" >> ~/.profile
 echo "export https_proxy='$2'" >> ~/.profile
 source /etc/profile.d/envvar.sh
 sudo yum install -y net-tools
-
+ifup eth1
 SCRIPT
 
 # begin execution here
@@ -86,13 +86,17 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         end # v
 
         c.vm.provision 'shell', inline: <<-EOS
-          sudo setenforce 0
-          sudo systemctl stop firewalld
-          sudo /etc/init.d/network restart
           #copy the etc_hosts file we created
           sudo cp /shared/.etc_hosts /etc/hosts
           EOS
         if ENV['VAGRANT_USE_KUBEADM']
+          c.vm.provision 'shell', inline: <<-EOS
+            sudo setenforce 0
+            sudo systemctl stop firewalld
+            sudo /etc/init.d/network restart
+            #copy the etc_hosts file we created
+            sudo cp /shared/.etc_hosts /etc/hosts
+            EOS
           c.vm.provision :shell, path: 'bootstrap_centos.sh'
           if role == 'master'
             # Install kubernetes on master

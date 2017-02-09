@@ -1,4 +1,6 @@
-# This provides paths shared between (un)install.sh and (un)install_swarm.sh
+#!/bin/sh
+
+# This scripts runs in a container with ansible installed.
 . ./install/ansible/install_defaults.sh
 
 # Ignore ansible ssh host key checking by default
@@ -13,6 +15,8 @@ cluster_store=""
 
 # Should the scheduler stack (docker swarm or k8s be uninstalled)
 uninstall_scheduler=False
+reset="false"
+reset_images="false"
 
 # This is the netmaster IP that needs to be provided for the installation to proceed
 netmaster=""
@@ -21,7 +25,7 @@ netmaster=""
 usage () {
   echo "Usage:"
   echo "./uninstall.sh -n <netmaster IP> -a <ansible options> -i <uninstall scheduler stack> -m <network mode - standalone/aci> -d <fwd mode - routing/bridge> -v <ACI image>  -r <cleanup containers/etcd state> -g <cleanup docker images>"
-
+  echo "This script is to be launched using the uninstall_swarm.sh script. See the documentation for uninstall_swarm.sh for a detailed description of options."
   echo ""
   exit 1
 }
@@ -29,12 +33,9 @@ usage () {
 # Return printing the error
 error_ret() {
   echo ""
-  echo $1
+  echo "$1"
   exit 1
 }
-
-reset="false"
-reset_images="false"
 
 while getopts ":n:a:im:d:v:rg" opt; do
     case $opt in
@@ -74,15 +75,15 @@ done
 
 echo "Generating Ansible configuration"
 inventory=".gen"
-mkdir -p $inventory
+mkdir -p "$inventory"
 host_inventory="$inventory/contiv_hosts"
 node_info="$inventory/contiv_nodes"
 
-./install/genInventoryFile.py $contiv_config $host_inventory $node_info $contiv_network_mode $fwd_mode
+./install/genInventoryFile.py "$contiv_config" "$host_inventory" "$node_info" $contiv_network_mode $fwd_mode
 
 if [ "$netmaster" = "" ]; then
   # Use the first master node as netmaster
-  netmaster=$(grep -A 5 netplugin-master $host_inventory | grep -m 1 ansible_ssh_host | awk '{print $2}' | awk -F "=" '{print $2}' | xargs)
+  netmaster=$(grep -A 5 netplugin-master "$host_inventory" | grep -m 1 ansible_ssh_host | awk '{print $2}' | awk -F "=" '{print $2}' | xargs)
   echo "Using $netmaster as the master node"
 fi
 
@@ -97,44 +98,51 @@ fi
 
 ansible_path=./ansible
 env_file=install/ansible/env.json
+
 # Get the netmaster control interface
 netmaster_control_if=$(grep -A10 $netmaster $contiv_config | grep -m 1 control | awk -F ":" '{print $2}' | xargs)
 # Get the ansible node
 node_name=$(grep $netmaster $host_inventory | awk '{print $1}' | xargs)
 # Get the service VIP for netmaster for the control interface
 service_vip=$(ansible $node_name -m setup $ans_opts -i $host_inventory | grep -A 100 ansible_$netmaster_control_if | grep -A 4 ipv4 | grep address | awk -F \" '{print $4}'| xargs)
-sed -i.bak "s/__NETMASTER_IP__/$service_vip/g" $env_file
-
+sed -i.bak "s/__NETMASTER_IP__/$service_vip/g" "$env_file"
+sed -i.bak "s#__CLUSTER_STORE__#$cluster#g" "$env_file"
 sed -i.bak "s/.*docker_reset_container_state.*/\"docker_reset_container_state\":$reset,/g" $env_file
 sed -i.bak "s/.*docker_reset_image_state.*/\"docker_reset_image_state\":$reset_images,/g" $env_file
 sed -i.bak "s/.*etcd_cleanup_state.*/\"etcd_cleanup_state\":$reset,/g" $env_file
 
 sed -i.bak "s#__CLUSTER_STORE__#$cluster#g" $env_file
 
-# Override extra vars file, if one is provided.
-if [[ -f $installer_config ]]; then
-  mv $env_file $env_file.bak
-  cp $installer_config $env_file
-fi
-
 if [ "$aci_image" != "" ];then
-  sed -i.bak "s#.*aci_gw_image.*#\"aci_gw_image\":\"$aci_image\",#g" $env_file
+  sed -i.bak "s#.*aci_gw_image.*#\"aci_gw_image\":\"$aci_image\",#g" "$env_file"
 fi
 
 echo "Uninstalling Contiv"
 
 # Uninstall contiv & API Proxy
-ansible-playbook $ans_opts -i $host_inventory -e "`cat $env_file`" $ansible_path/uninstall_auth_proxy.yml
-ansible-playbook $ans_opts -i $host_inventory -e "`cat $env_file`" $ansible_path/uninstall_contiv.yml
+echo '- include: uninstall_auth_proxy.yml' > $ansible_path/uninstall_plays.yml
+echo '- include: uninstall_contiv.yml' >> $ansible_path/uninstall_plays.yml
 
 if [ $uninstall_scheduler = True ];then
-  echo "Uninstalling the scheduler stack"
-  ansible-playbook $ans_opts -i $host_inventory -e "`cat $env_file`" $ansible_path/uninstall_scheduler.yml
-  ansible-playbook $ans_opts -i $host_inventory -e "`cat $env_file`" $ansible_path/uninstall_etcd.yml
-  ansible-playbook $ans_opts -i $host_inventory -e "`cat $env_file`" $ansible_path/uninstall_docker.yml
+  echo '- include: uninstall_scheduler.yml' >> $ansible_path/uninstall_plays.yml
+  echo '- include: uninstall_etcd.yml' >> $ansible_path/uninstall_plays.yml
+  echo '- include: uninstall_docker.yml' >> $ansible_path/uninstall_plays.yml
 else
   if [ "$cluster_store" = "" ];then
-    echo "Uninstalling etcd"
-    ansible-playbook $ans_opts -i $host_inventory -e "`cat $env_file`" $ansible_path/uninstall_etcd.yml
+    echo '- include: uninstall_etcd.yml' >> $ansible_path/uninstall_plays.yml
   fi
 fi
+ansible-playbook $ans_opts -i "$host_inventory" -e "$(cat $env_file)" $ansible_path/uninstall_plays.yml | tee /var/contiv/contiv_uninstall.log
+
+unreachable=$(grep "PLAY RECAP" -A 9999 /var/contiv/contiv_install.log | awk -F "unreachable=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
+failed=$(grep "PLAY RECAP" -A 9999 /var/contiv/contiv_install.log | awk -F "failed=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
+
+if [ "$unreachable" = "" ] && [ "$failed" = "" ]; then
+  echo "Uninstallation is complete"
+else
+  echo "Uninstallation failed"
+  echo "========================================================="
+  echo " Please check contiv_uninstall.log for errors."
+  echo "========================================================="
+fi
+

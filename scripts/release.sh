@@ -78,7 +78,7 @@ curl -sSL https://github.com/contiv/netplugin/releases/download/$contiv_version/
 pushd $output_dir
 tar xf netplugin-$contiv_version.tar.bz2 netctl
 rm -f netplugin-$contiv_version.tar.bz2
-git clone http://github.com/neelimamukiri/ansible -b state_change_local_binaries
+git clone http://github.com/contiv/ansible
 popd
 
 # Replace versions
