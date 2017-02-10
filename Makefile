@@ -10,7 +10,7 @@ release:
 
 # Brings up a demo cluster to install Contiv on - by default this is a docker, centos cluster.
 # It can be configured to start a RHEL cluster by setting CONTIV_NODE_OS=rhel7.
-# It can be started with k8s kubeadm install by running with VAGRANT_USE_KUBEADM=1.
+# It can be started with k8s kubeadm install by running with CONTIV_KUBEADM=1.
 cluster: cluster-destroy
 	cd cluster && vagrant up
 
@@ -20,20 +20,27 @@ cluster-destroy:
 # demo-k8s brings up a cluster with k8s, runs the installer on it, and shows the URL
 # of the demo Contiv Admin Console which was set up
 demo-k8s:
-	@bash ./scripts/demo-k8s.sh
+	CONTIV_KUBEADM=1 make cluster
+	BUILD_VERSION=1.0.0-beta.2 make install-test-kubeadm
+
+# demo-swarm brings up a cluster with docker swarm, runs the installer on it, and shows the URL
+# of the demo Contiv Admin Console which was set up
+demo-swarm:
+	make cluster
+	BUILD_VERSION=1.0.0-beta.2 make install-test-swarm
 
 # Create a release and test the release installation on a vagrant cluster
 # TODO: The vagrant part of this can be optimized by taking snapshots instead
 # of creating a new set of VMs for each case
 release-test-kubeadm: release 
 	# Test kubeadm (centos by default)
-	VAGRANT_USE_KUBEADM=1 make cluster
-	VAGRANT_USE_KUBEADM=1 make install-test-kubeadm
+	CONTIV_KUBEADM=1 make cluster
+	CONTIV_KUBEADM=1 make install-test-kubeadm
 
 release-test-swarm: release 
 	# Test swarm (centos by default)
-	CLUSTER_CONFIG='cluster_defs_ansible.json' make cluster
-	CLUSTER_CONFIG='cluster_defs_ansible.json' make install-test-swarm
+	make cluster
+	make install-test-swarm
 
 release-test-kubelegacy: release 
 	# Test k8s ansible (centos by default)

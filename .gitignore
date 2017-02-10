@@ -1,2 +1,4 @@
 # vagrant data directories
 cluster/.vagrant
+cluster/.etc_hosts
+cluster/.cfg.yml

@@ -144,9 +144,9 @@ fi
 
 echo "Starting the installer container"
 image_name="contiv/install:__CONTIV_INSTALL_VERSION__"
-install_mount="-v $(pwd)/install:/install"
-ansible_mount="-v $(pwd)/ansible:/ansible"
-config_mount="-v $src_conf_path:$container_conf_path"
-cache_mount="-v $(pwd)/contiv_cache:/var/contiv_cache"
+install_mount="-v $(pwd)/install:/install:Z"
+ansible_mount="-v $(pwd)/ansible:/ansible:Z"
+config_mount="-v $src_conf_path:$container_conf_path:Z"
+cache_mount="-v $(pwd)/contiv_cache:/var/contiv_cache:Z"
 mounts="$install_mount $ansible_mount $cache_mount $config_mount"
 docker run --rm $mounts $image_name sh -c "./install/ansible/install.sh $netmaster_param -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param"
