@@ -25,10 +25,13 @@ vagrant ssh contiv-master -- "$COMMANDS"
 set +e
 read -r -d '' SETUP_DEFAULT_NET <<-EOF
     cd contiv-${release} && \\
-    sudo ./netctl net create -s ${default_net_cidr} default-net
+    sudo netctl net create -s ${default_net_cidr} default-net
 EOF
 set -e
 
+echo
+echo "Waiting 30 seconds ..."
+sleep 30
 echo
 echo "Creating default network"
 vagrant ssh contiv-master -- "${SETUP_DEFAULT_NET}"
