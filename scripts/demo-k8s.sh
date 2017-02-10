@@ -5,6 +5,7 @@ set -euo pipefail
 release="${CONTIV_RELEASE_VER:-1.0.0-beta.1}"
 svc_ip="${MASTER_IP:-192.168.2.10}"
 url="https://${svc_ip}:10000" # master_ip copied from Vagrantfile
+default_net_cidr="${DEFAULT_NET:-20.1.1.0/24}"
 
 VAGRANT_USE_KUBEADM=1 make cluster
 
@@ -21,6 +22,17 @@ set -e
 cd cluster
 vagrant ssh contiv-master -- "$COMMANDS"
 
+set +e
+read -r -d '' SETUP_DEFAULT_NET <<-EOF
+    cd contiv-${release} && \\
+    sudo ./netctl net create -s ${default_net_cidr} default-net
+EOF
+set -e
+
+echo
+echo "Creating default network"
+vagrant ssh contiv-master -- "${SETUP_DEFAULT_NET}"
+
 echo
 echo "Contiv Admin Console is available at:"
 echo ""
@@ -30,3 +42,4 @@ cat <<EOF
 NOTE: Because the Contiv Admin Console is using a self-signed certificate for this demo,
       you will see a security warning when the page loads.  You can safely dismiss it.
 EOF
+
