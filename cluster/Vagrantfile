@@ -1,10 +1,11 @@
-  # -*- mode: ruby -*-
+# -*- mode: ruby -*-
 # vi: set ft=ruby :
 require 'rubygems'
 require 'fileutils'
 require 'yaml'
 
 token = 'd900e1.8a392798f13b33a4'
+DEFAULT_K8S_VERSION = 'v1.4.7'.freeze
 
 # method to create an etc_hosts file based on the cluster info
 def create_etc_hosts(num_nodes, base_ip, start)
@@ -101,7 +102,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         c.vm.network 'forwarded_port', guest: 10_000, host: 10_005 + node_addr.split('.')[3].to_i
       end
       c.vm.provider 'virtualbox' do |v|
-        # kube api server node is super slow with just 1GB RAM, so give it more
         v.memory = ENV['CONTIV_KUBEADM'] && n.zero? ? 2048 : 1024
         # make all nics 'virtio' to take benefit of builtin vlan tag
         # support, which otherwise needs to be enabled in Intel drivers,
@@ -123,7 +123,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         c.vm.provision :shell, path: 'bootstrap_centos.sh'
         if n.zero?
           # Install kubernetes on master
-          ks8_ver = ENV['CONTIV_K8s_VERSION'] || 'v1.4.7'
+          ks8_ver = ENV['CONTIV_K8S_VERSION'] || DEFAULT_K8S_VERSION
           c.vm.provision :shell, path: 'k8smaster_centos.sh', args: [token, node_addr, ks8_ver]
         else
           # Install kubernetes on nodes

@@ -1,5 +1,7 @@
 # Quick Start Guide
 
+This document provides the steps to create a quick setup on a local Mac OS or Linux host using a cluster of Virtual Box VMs setup using vagrant.
+
 ## Pre-requisites
 
 * [Install Virtual Box 5.1.14 or later]( https://www.virtualbox.org/wiki/Downloads )
