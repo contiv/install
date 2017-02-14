@@ -123,9 +123,12 @@ fi
 echo '- include: install_contiv.yml' >> $ansible_path/install_plays.yml
 echo '- include: install_auth_proxy.yml' >> $ansible_path/install_plays.yml
 
-ansible-playbook $ans_opts -i "$host_inventory" -e "$(cat $env_file)" $ansible_path/install_plays.yml | tee /var/contiv/contiv_install.log
-unreachable=$(grep "PLAY RECAP" -A 9999 /var/contiv/contiv_install.log | awk -F "unreachable=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
-failed=$(grep "PLAY RECAP" -A 9999 /var/contiv/contiv_install.log | awk -F "failed=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
+log_file_name="contiv_install_$(date -u +%m-%d-%Y.%H-%M-%S.UTC).log"
+log_file="/var/contiv/$log_file_name"
+
+ansible-playbook $ans_opts -i "$host_inventory" -e "$(cat $env_file)" $ansible_path/install_plays.yml | tee $log_file
+unreachable=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "unreachable=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
+failed=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "failed=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
 
 if [ "$unreachable" = "" ] && [ "$failed" = "" ]; then
   echo "Installation is complete"
@@ -146,6 +149,6 @@ if [ "$unreachable" = "" ] && [ "$failed" = "" ]; then
 else
   echo "Installation failed"
   echo "========================================================="
-  echo " Please check contiv_install.log for errors."
+  echo " Please check ./config/$log_file_name for errors."
   echo "========================================================="
 fi
