@@ -1,26 +1,41 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 require 'rubygems'
-require 'json'
 require 'fileutils'
+require 'yaml'
 
 token = 'd900e1.8a392798f13b33a4'
+DEFAULT_K8S_VERSION = 'v1.4.7'.freeze
 
 # method to create an etc_hosts file based on the cluster info
-def create_etc_hosts(cluster)
-  master_ip = '192.168.2.10'
+def create_etc_hosts(num_nodes, base_ip, start)
+  master_ip = base_ip + start.to_s
   hosts = "127.0.0.1   localhost\n"
-  cluster.each do |role, member_list|
-    hosts = member_list.inject(hosts) { |acc, elem| acc << "#{elem['contiv_control_ip']}   #{elem['name']}\n" }
-    if role == 'master' && member_list[0]
-      hosts << "#{member_list[0]['contiv_control_ip']}   netmaster\n"
-      master_ip = member_list[0]['contiv_control_ip']
-    end
-  end
+  hosts << "#{master_ip}   netmaster\n"
+  hosts = (0..num_nodes).inject(hosts) { |acc, elem| acc << base_ip + "#{elem + start} contiv-node#{elem + 1} \n" }
 
-  etc_file = (ENV['VAGRANT_CWD'] || '.') + '/export/.etc_hosts'
+  etc_file = (ENV['VAGRANT_CWD'] || '.') + '/.etc_hosts'
   File.write(etc_file, hosts)
   master_ip
+end
+
+# method to create an cfg file based on the cluster info
+def create_cfg_info(num_nodes, node_ips)
+  conn = {}
+  num_nodes.times do |n|
+    node_ip = node_ips[n]
+    node = if n.zero?
+             { 'role' => 'master' }
+           else
+             {}
+           end
+    node['control'] = ENV['CONTIV_CONTROL_IF'] || 'eth1'
+    node['data'] = ENV['CONTIV_DATA_IF'] || 'eth2'
+    conn[node_ip] = node
+  end
+  cfg_data = { 'CONNECTION_INFO' => conn }
+  cfg_file = (ENV['VAGRANT_CWD'] || '.') + '/.cfg.yml'
+  File.write(cfg_file, cfg_data.to_yaml)
 end
 
 provision_node = <<SCRIPT
@@ -29,88 +44,94 @@ echo "export http_proxy='$1'" >> ~/.profile
 echo "export https_proxy='$2'" >> ~/.profile
 source /etc/profile.d/envvar.sh
 sudo yum install -y net-tools
+echo $3 > /etc/hosts
 ifup eth1
 SCRIPT
 
 # begin execution here
-# read the cluster configuration and create /etc/hosts file
-config_file = ENV['CLUSTER_CONFIG'] || 'cluster_defs.json'
-cluster = JSON.parse(File.read((ENV['VAGRANT_CWD'] || '.') + '/' + config_file))
-master_ip = create_etc_hosts(cluster)
+num_nodes = 2
+if ENV['CONTIV_NODES'] && ENV['CONTIV_NODES'] != ''
+  num_nodes = ENV['CONTIV_NODES'].to_i
+end
+base_ip = '192.168.2.'
+if ENV['CONTIV_IP_PREFIX'] && ENV['CONTIV_IP_PREFIX'] != ''
+  base_ip = ENV['CONTIV_IP_PREFIX']
+end
+start = ENV['CONTIV_KUBEADM'] ? 50 : 50 + num_nodes
+name_start = ENV['CONTIV_KUBEADM'] ? 1 : 1 + num_nodes
+node_ips = Array.new(num_nodes) { |n| base_ip + (n + start).to_s }
+node_names = Array.new(num_nodes) { |n| "contiv-node#{n + name_start}" }
+
+master_ip = create_etc_hosts(num_nodes, base_ip, start)
+create_cfg_info(num_nodes, node_ips)
 
 VAGRANTFILE_API_VERSION = '2'.freeze
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.synced_folder './export', '/shared'
-  config.vm.provider 'virtualbox' do |v|
-    v.linked_clone = true if Vagrant::VERSION >= '1.8'
-  end
+  config.vm.box_check_update = false
+  config.vbguest.auto_update = false if Vagrant.has_plugin?('vagrant-vbguest')
   if ENV['CONTIV_NODE_OS'] && ENV['CONTIV_NODE_OS'] == 'rhel7'
     config.registration.manager = 'subscription_manager'
     config.registration.username = ENV['CONTIV_RHEL_USER']
     config.registration.password = ENV['CONTIV_RHEL_PASSWD']
   end
-  # config.ssh.password = 'vagrant'
+
   config.ssh.insert_key = false
-  config.ssh.private_key_path = './export/insecure_private_key'
+  num_nodes.times do |n|
+    node_name = node_names[n]
+    node_addr = node_ips[n]
+    config.vm.define vm_name = node_name do |c|
+      if ENV['CONTIV_NODE_OS'] && ENV['CONTIV_NODE_OS'] == 'rhel7'
+        # Download rhel7.2 box from https://access.redhat.com/downloads/content/293/ver=2/rhel---7/2.0.0/x86_64/product-software
+        # Add it as rhel7 vagrant box add rhel-cdk-kubernetes-7.2-29.x86_64.vagrant-virtualbox.box --name=rhel7
+        c.vm.box = 'rhel7'
+      else
+        c.vm.box = 'centos/7'
+      end
+      c.vm.provision 'shell' do |s|
+        s.inline = provision_node
+        etc_file = (ENV['VAGRANT_CWD'] || '.') + '/.etc_hosts'
+        hosts = File.read(etc_file)
+        s.args = [ENV['http_proxy'] || '', ENV['https_proxy'] || '', hosts]
+      end
 
-  cluster.each do |role, member_list|
-    member_list.each do |member_info|
-      config.vm.define vm_name = member_info['name'] do |c|
-        if ENV['CONTIV_NODE_OS'] && ENV['CONTIV_NODE_OS'] == 'rhel7'
-          # Download rhel7.2 box from https://access.redhat.com/downloads/content/293/ver=2/rhel---7/2.0.0/x86_64/product-software
-          # Add it as rhel7 vagrant box add rhel-cdk-kubernetes-7.2-29.x86_64.vagrant-virtualbox.box --name=rhel7
-          c.vm.box = 'rhel7'
-        else
-          c.vm.box = 'centos/7'
-        end
-        c.vm.provision 'shell' do |s|
-          s.inline = provision_node
-          s.args = [ENV['http_proxy'] || '', ENV['https_proxy'] || '']
-        end
+      # configure ip address etc
+      c.vm.hostname = vm_name
+      c.vm.network :private_network, ip: node_addr
+      c.vm.network :private_network, ip: node_addr, virtualbox__intnet: 'true', auto_config: false
+      if n.zero?
+        c.vm.network 'forwarded_port', guest: 10_000, host: 10_005 + node_addr.split('.')[3].to_i
+      end
+      c.vm.provider 'virtualbox' do |v|
+        v.memory = ENV['CONTIV_KUBEADM'] && n.zero? ? 2048 : 1024
+        # make all nics 'virtio' to take benefit of builtin vlan tag
+        # support, which otherwise needs to be enabled in Intel drivers,
+        # which are used by default by virtualbox
+        v.customize ['modifyvm', :id, '--nictype1', 'virtio']
+        v.customize ['modifyvm', :id, '--nictype2', 'virtio']
+        v.customize ['modifyvm', :id, '--nictype3', 'virtio']
+        v.customize ['modifyvm', :id, '--nicpromisc2', 'allow-all']
+        v.customize ['modifyvm', :id, '--nicpromisc3', 'allow-all']
+        v.customize ['modifyvm', :id, '--paravirtprovider', 'kvm']
+      end # v
 
-        # configure ip address etc
-        c.vm.hostname = vm_name
-        c.vm.network :private_network, ip: member_info['contiv_control_ip']
-        c.vm.network :private_network, ip: member_info['contiv_network_ip'], virtualbox__intnet: 'true', auto_config: false
-        c.vm.provider 'virtualbox' do |v|
-          v.memory = vm_name == 'contiv-master' ? 2048 : 1024
-          # make all nics 'virtio' to take benefit of builtin vlan tag
-          # support, which otherwise needs to be enabled in Intel drivers,
-          # which are used by default by virtualbox
-          v.customize ['modifyvm', :id, '--nictype1', 'virtio']
-          v.customize ['modifyvm', :id, '--nictype2', 'virtio']
-          v.customize ['modifyvm', :id, '--nictype3', 'virtio']
-          v.customize ['modifyvm', :id, '--nicpromisc2', 'allow-all']
-          v.customize ['modifyvm', :id, '--nicpromisc3', 'allow-all']
-          v.customize ['modifyvm', :id, '--paravirtprovider', 'kvm']
-        end # v
-
+      if ENV['CONTIV_KUBEADM']
         c.vm.provision 'shell', inline: <<-EOS
-          #copy the etc_hosts file we created
-          sudo cp /shared/.etc_hosts /etc/hosts
-          EOS
-        if ENV['VAGRANT_USE_KUBEADM']
-          c.vm.provision 'shell', inline: <<-EOS
             sudo setenforce 0
             sudo systemctl stop firewalld
             sudo /etc/init.d/network restart
-            #copy the etc_hosts file we created
-            sudo cp /shared/.etc_hosts /etc/hosts
             EOS
-          c.vm.provision :shell, path: 'bootstrap_centos.sh'
-          if role == 'master'
-            # Install kubernetes on master
-            ks8_ver = ENV['CONTIV_K8s_VERSION'] || 'v1.4.7'
-            c.vm.provision :shell, path: 'k8smaster_centos.sh', args: [token, member_info['contiv_control_ip'], ks8_ver]
-          else
-            # Install kubernetes on nodes
-            c.vm.provision :shell, path: 'k8sworker_centos.sh', args: [token, master_ip]
-          end # if
+        c.vm.provision :shell, path: 'bootstrap_centos.sh'
+        if n.zero?
+          # Install kubernetes on master
+          ks8_ver = ENV['CONTIV_K8S_VERSION'] || DEFAULT_K8S_VERSION
+          c.vm.provision :shell, path: 'k8smaster_centos.sh', args: [token, node_addr, ks8_ver]
         else
-          c.vm.provision :shell, inline: 'yum install policycoreutils-python -y'
-        end
-      end # c
-    end # member_info
+          # Install kubernetes on nodes
+          c.vm.provision :shell, path: 'k8sworker_centos.sh', args: [token, master_ip]
+        end # if
+      else
+        c.vm.provision :shell, inline: 'yum install policycoreutils-python -y'
+      end
+    end # c
   end # role
 end # config
-#

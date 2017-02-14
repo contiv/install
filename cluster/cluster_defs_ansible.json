@@ -1,3 +1,0 @@
-{"master": [{"name": "contiv-master1", "management_ip": "192.168.2.12", "contiv_control_if": "eth1", "contiv_control_ip": "192.168.2.12", "contiv_network_if": "eth2", "contiv_network_ip": "10.1.1.12"}],
- "nodes" : [{"name": "contiv-node-011", "management_ip": "192.168.2.13", "contiv_control_if": "eth1", "contiv_control_ip": "192.168.2.13", "contiv_network_if": "eth2", "contiv_network_ip": "10.1.1.13", "max_pods": "40"}]
-}

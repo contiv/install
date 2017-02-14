@@ -11,4 +11,4 @@ scp -i $ssh_key $config_file $user@contiv-master:/tmp/
 
 # Extract and launch the installer
 ssh -i $ssh_key $user@contiv-master "cd /tmp && tar -xvzf $install_bundle && chmod +x contiv/ansible/install_k8s.sh"
-ssh -i $ssh_key $user@contiv-master "VAGRANT_USE_KUBEADM=1 CONTIV_NODE_OS=$contiv_os contiv/ansible/install_k8s.sh"
+ssh -i $ssh_key $user@contiv-master "CONTIV_KUBEADM=1 CONTIV_NODE_OS=$contiv_os contiv/ansible/install_k8s.sh"

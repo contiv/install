@@ -1,8 +1,8 @@
 CONNECTION_INFO:
-  192.168.2.12:
+  192.168.2.52:
         role: master
         control: eth1
         data: eth2
-  192.168.2.13:
+  192.168.2.53:
         control: eth1
         data: eth2

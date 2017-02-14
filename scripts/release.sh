@@ -102,7 +102,6 @@ sed -i.bak "s/__ACI_GW_VERSION__/$aci_gw_version/g" $ansible_env
 sed -i.bak "s/__API_PROXY_VERSION__/$auth_proxy_version/g" $ansible_env
 sed -i.bak "s/__ETCD_VERSION__/$etcd_version/g" $ansible_env
 
-chmod +x $output_dir/install/install.sh
 chmod +x $k8s_yaml_dir/install.sh
 chmod +x $k8s_yaml_dir/uninstall.sh
 sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$VERSION/g" $ansible_yaml_dir/install_swarm.sh
@@ -120,14 +119,9 @@ ansible_spec=$output_dir/install/ansible/Dockerfile
 docker build -t contiv/install:$VERSION -f $ansible_spec $output_dir
 
 rm -rf $output_dir/scripts
-if [ "$DEV_IMAGE_NAME" = "$VERSION" ]; then
-  # This is a dev build, so save the images locally.
-  docker save contiv/install:$VERSION -o $output_dir/contiv-install-image.tar
-else
-  echo "**************************************************************************************************"
-  echo " Please ensure that contiv/install:$VERSION is pushed to docker hub"
-  echo "**************************************************************************************************"
-fi
+echo "**************************************************************************************************"
+echo " Please ensure that contiv/install:$VERSION is pushed to docker hub"
+echo "**************************************************************************************************"
 
 # Clean up the Dockerfiles, they are not part of the release bits.
 rm -f $ansible_spec
@@ -137,17 +131,20 @@ binary_cache=$output_dir/contiv_cache
 mkdir -p $binary_cache
 
 # Create the minimal tar bundle
-tar cvzf $tmp_output_file -C $release_dir .
+tar czf $tmp_output_file -C $release_dir .
 
 # Save the auth proxy & aci-gw images for packaging the full docker images with contiv install binaries
 if [ "$(docker images -q contiv/auth_proxy:$auth_proxy_version 2>/dev/null)" == "" ]; then
   docker pull contiv/auth_proxy:$auth_proxy_version
 fi
-docker save contiv/auth_proxy:$auth_proxy_version -o $binary_cache/auth-proxy-image.tar
+proxy_image=$(docker images -q contiv/auth_proxy:$auth_proxy_version)
+docker save $proxy_image -o $binary_cache/auth-proxy-image.tar
+
 if [ "$(docker images -q contiv/aci-gw:$aci_gw_version 2>/dev/null)" == "" ]; then
   docker pull contiv/aci-gw:$aci_gw_version
 fi
-docker save contiv/aci-gw:$aci_gw_version -o $binary_cache/aci-gw-image.tar
+aci_image=$(docker images -q contiv/aci-gw:$aci_gw_version)
+docker save $aci_image -o $binary_cache/aci-gw-image.tar
 
 curl -ksL -o $binary_cache/openvswitch-2.3.1-2.el7.x86_64.rpm  https://cisco.box.com/shared/static/zzmpe1zesdpf270k9pml40rlm4o8fs56.rpm
 curl -ksL -o $binary_cache/v1dvgoboo5zgqrtn6tu27vxeqtdo2bdl.deb https://cisco.box.com/shared/static/v1dvgoboo5zgqrtn6tu27vxeqtdo2bdl.deb
@@ -159,7 +156,7 @@ sed -i.bak "s#.*auth_proxy_local_install.*#  \"auth_proxy_local_install\": True,
 sed -i.bak "s#.*contiv_network_local_install.*#  \"contiv_network_local_install\": True#g" $env_file
 
 # Create the full tar bundle
-tar cvzf $tmp_full_output_file -C $release_dir .
+tar czf $tmp_full_output_file -C $release_dir .
 
 
 mv $tmp_output_file $output_file
