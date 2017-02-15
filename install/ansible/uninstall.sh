@@ -132,17 +132,19 @@ else
     echo '- include: uninstall_etcd.yml' >> $ansible_path/uninstall_plays.yml
   fi
 fi
-ansible-playbook $ans_opts -i "$host_inventory" -e "$(cat $env_file)" $ansible_path/uninstall_plays.yml | tee /var/contiv/contiv_uninstall.log
+log_file_name="contiv_uninstall_$(date -u +%m-%d-%Y.%H-%M-%S.UTC).log"
+log_file="/var/contiv/$log_file_name"
+ansible-playbook $ans_opts -i "$host_inventory" -e "$(cat $env_file)" $ansible_path/uninstall_plays.yml | tee $log_file
 
-unreachable=$(grep "PLAY RECAP" -A 9999 /var/contiv/contiv_install.log | awk -F "unreachable=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
-failed=$(grep "PLAY RECAP" -A 9999 /var/contiv/contiv_install.log | awk -F "failed=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
+unreachable=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "unreachable=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
+failed=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "failed=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
 
 if [ "$unreachable" = "" ] && [ "$failed" = "" ]; then
   echo "Uninstallation is complete"
 else
   echo "Uninstallation failed"
   echo "========================================================="
-  echo " Please check contiv_uninstall.log for errors."
+  echo " Please check ./config/$log_file_name for errors."
   echo "========================================================="
 fi
 
