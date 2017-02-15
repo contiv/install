@@ -126,7 +126,15 @@ echo '- include: install_auth_proxy.yml' >> $ansible_path/install_plays.yml
 log_file_name="contiv_install_$(date -u +%m-%d-%Y.%H-%M-%S.UTC).log"
 log_file="/var/contiv/$log_file_name"
 
+# Ansible needs unquoted booleans but we need quoted booleans for json parsing.
+# So remove quotes before sending to ansible and add them back after.
+sed -i.bak "s#\"True\"#True#gI" "$env_file"
+sed -i.bak "s#\"False\"#False#gI" "$env_file"
 ansible-playbook $ans_opts -i "$host_inventory" -e "$(cat $env_file)" $ansible_path/install_plays.yml | tee $log_file
+sed -i.bak "s#True#\"True\"#gI" "$env_file"
+sed -i.bak "s#False#\"False\"#gI" "$env_file"
+rm -rf "$env_file.bak*"
+
 unreachable=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "unreachable=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
 failed=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "failed=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
 
