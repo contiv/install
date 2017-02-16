@@ -22,7 +22,7 @@ Uninstaller:
 Usage: ./install/ansible/uninstall_swarm.sh OPTIONS
 
 Mandatory Options:
--f   string     Configuration file listing the hostnames with the control and data interfaces and optionally ACI parameters
+-f   string     Configuration file (cfg.yml) listing the hostnames with the control and data interfaces and optionally ACI parameters
 -e   string     SSH key to connect to the hosts
 -u   string     SSH User
 -i              Uninstall the scheduler stack 
@@ -32,10 +32,10 @@ Additional Options:
 -d   string     Forwarding mode (“routing” or “bridge”). Default mode is “bridge”
 Advanced Options:
 -v   string     ACI Image (default is contiv/aci-gw:latest). Use this to specify a specific version of the ACI Image.
--n   string     DNS name/IP address of the host to be used as the net master service VIP.
+-n   string     DNS name/IP address of the host to be used as the net master service VIP. This must be a host present in the cfg.yml file.
 -r              Reset etcd state and remove docker containers
 -g              Remove docker images
-
+-s   string     URL of the cluster store to be used (for example etcd://etcd_master:2379)
 Additional parameters can also be updated in install/ansible/env.json file.
 
 Examples:
@@ -54,8 +54,8 @@ EOF
 
 # Create the config folder to be shared with the install container.
 mkdir -p "$src_conf_path"
-
-while getopts ":f:n:a:e:im:d:v:u:rg" opt; do
+cluster_param=""
+while getopts ":f:n:a:e:im:d:v:u:rgs:" opt; do
   case $opt in
     f)
       cp "$OPTARG" "$host_contiv_config"
@@ -81,6 +81,10 @@ while getopts ":f:n:a:e:im:d:v:u:rg" opt; do
     v)
       aci_image=$OPTARG
       ;;
+    s)
+      cluster_param="-s $OPTARG"
+      ;;
+
     i) 
       echo "Uninstalling docker will fail if the uninstallation is being run from a node in the cluster."
       echo "Press Ctrl+C to cancel the uininstall and start it from a host outside the cluster."
@@ -134,4 +138,4 @@ ansible_mount="-v $(pwd)/ansible:/ansible:Z"
 config_mount="-v $src_conf_path:$container_conf_path:Z"
 cache_mount="-v $(pwd)/contiv_cache:/var/contiv_cache:Z"
 mounts="$install_mount $ansible_mount $cache_mount $config_mount"
-docker run --rm $mounts $image_name sh -c "./install/ansible/uninstall.sh $netmaster_param -a \"$ans_opts\" $uninstall_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param $reset_params"
+docker run --rm $mounts $image_name sh -c "./install/ansible/uninstall.sh $netmaster_param -a \"$ans_opts\" $uninstall_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param $reset_params $cluster_param"

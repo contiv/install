@@ -25,7 +25,7 @@ Installer:
 Usage: ./install/ansible/install_swarm.sh OPTIONS
 
 Mandatory Options:
--f   string     Configuration file listing the hostnames with the control and data interfaces and optionally ACI parameters
+-f   string     Configuration file (cfg.yml) listing the hostnames with the control and data interfaces and optionally ACI parameters
 -e   string     SSH key to connect to the hosts
 -u   string     SSH User
 -i              Install the scheduler stack 
@@ -38,8 +38,8 @@ Additional Options:
 
 Advanced Options:
 -v   string     ACI Image (default is contiv/aci-gw:latest). Use this to specify a specific version of the ACI Image.
--n   string     DNS name/IP address of the host to be used as the net master service VIP.
-
+-n   string     DNS name/IP address of the host to be used as the net master service VIP. This must be a host present in the cfg.yml file.
+-s   string     URL of the cluster store to be used (for example etcd://etcd_master:2379)
 Additional parameters can also be updated in install/ansible/env.json file.
 
 Examples:
@@ -62,8 +62,8 @@ EOF
 
 # Create the config folder to be shared with the install container.
 mkdir -p "$src_conf_path"
-
-while getopts ":f:n:a:e:im:d:v:u:c:k:" opt; do
+cluster_param=""
+while getopts ":f:n:a:e:im:d:v:u:c:k:s:" opt; do
   case $opt in
     f)
       cp "$OPTARG" "$host_contiv_config"
@@ -89,6 +89,10 @@ while getopts ":f:n:a:e:im:d:v:u:c:k:" opt; do
     v)
       aci_image=$OPTARG
       ;;
+    s)
+      cluster_param="-s $OPTARG"
+      ;;
+
     i) 
       install_scheduler="-i"
       ;;
@@ -149,4 +153,4 @@ ansible_mount="-v $(pwd)/ansible:/ansible:Z"
 config_mount="-v $src_conf_path:$container_conf_path:Z"
 cache_mount="-v $(pwd)/contiv_cache:/var/contiv_cache:Z"
 mounts="$install_mount $ansible_mount $cache_mount $config_mount"
-docker run --rm $mounts $image_name sh -c "./install/ansible/install.sh $netmaster_param -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param"
+docker run --rm $mounts $image_name sh -c "./install/ansible/install.sh $netmaster_param -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param $cluster_param"
