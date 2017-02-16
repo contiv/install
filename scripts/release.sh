@@ -68,7 +68,6 @@ cp -rf install $output_dir
 cp -rf scripts/generate-certificate.sh $output_dir/install
 
 # Get the ansible support files
-curl -sSL -o $output_dir/install/genInventoryFile.py https://raw.githubusercontent.com/contiv/demo/master/net/extras/genInventoryFile.py
 chmod +x $output_dir/install/genInventoryFile.py
 chmod +x $output_dir/install/generate-certificate.sh
 
@@ -146,9 +145,6 @@ fi
 aci_image=$(docker images -q contiv/aci-gw:$aci_gw_version)
 docker save $aci_image -o $binary_cache/aci-gw-image.tar
 
-curl -ksL -o $binary_cache/openvswitch-2.3.1-2.el7.x86_64.rpm  https://cisco.box.com/shared/static/zzmpe1zesdpf270k9pml40rlm4o8fs56.rpm
-curl -ksL -o $binary_cache/v1dvgoboo5zgqrtn6tu27vxeqtdo2bdl.deb https://cisco.box.com/shared/static/v1dvgoboo5zgqrtn6tu27vxeqtdo2bdl.deb
-curl -ksL -o $binary_cache/ymbuwvt2qprs4tquextw75b82hyaxwon.deb https://cisco.box.com/shared/static/ymbuwvt2qprs4tquextw75b82hyaxwon.deb
 curl -sL -o $binary_cache/netplugin-$contiv_version.tar.bz2 https://github.com/contiv/netplugin/releases/download/$contiv_version/netplugin-$contiv_version.tar.bz2
 
 env_file=$output_dir/install/ansible/env.json

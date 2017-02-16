@@ -35,7 +35,7 @@ Advanced Options:
 -n   string     DNS name/IP address of the host to be used as the net master service VIP. This must be a host present in the cfg.yml file.
 -r              Reset etcd state and remove docker containers
 -g              Remove docker images
--s   string     URL of the cluster store to be used (for example etcd://etcd_master:2379)
+-s   string     URL of the cluster store to be used (for example etcd://etcd master or netmaster IP:2379)
 Additional parameters can also be updated in install/ansible/env.json file.
 
 Examples:
