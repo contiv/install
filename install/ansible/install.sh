@@ -34,7 +34,7 @@ error_ret() {
   exit 1
 }
 
-while getopts ":n:a:im:d:v:" opt; do
+while getopts ":n:a:im:d:v:s:" opt; do
     case $opt in
        n)
           netmaster=$OPTARG
@@ -54,6 +54,9 @@ while getopts ":n:a:im:d:v:" opt; do
        v)
           aci_image=$OPTARG
           ;;
+       s)
+          cluster_store=$OPTARG
+      ;;
        :)
           echo "An argument required for $OPTARG was not passed"
           usage
@@ -82,11 +85,6 @@ if [ "$netmaster" = "" ]; then
   usage
 fi
 
-cluster="etcd://$netmaster:2379"
-if [ "$cluster_store" != "" ];then
-  cluster=$cluster_store
-fi
-
 ansible_path=./ansible
 env_file=install/ansible/env.json
 
@@ -96,8 +94,13 @@ netmaster_control_if=$(grep -A10 $netmaster $contiv_config | grep -m 1 control |
 node_name=$(grep $netmaster $host_inventory | awk '{print $1}' | xargs)
 # Get the service VIP for netmaster for the control interface
 service_vip=$(ansible $node_name -m setup $ans_opts -i $host_inventory | grep -A 100 ansible_$netmaster_control_if | grep -A 4 ipv4 | grep address | awk -F \" '{print $4}'| xargs)
+
+if [ "$cluster_store" == "" ];then
+  cluster_store="etcd://$service_vip:2379"
+fi
+
 sed -i.bak "s/__NETMASTER_IP__/$service_vip/g" "$env_file"
-sed -i.bak "s#__CLUSTER_STORE__#$cluster#g" "$env_file"
+sed -i.bak "s#__CLUSTER_STORE__#$cluster_store#g" "$env_file"
 
 # Copy certs
 cp /var/contiv/cert.pem /ansible/roles/auth_proxy/files/
