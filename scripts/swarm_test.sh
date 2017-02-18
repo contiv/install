@@ -14,6 +14,7 @@ pushd cluster
 ssh_key=$(vagrant ssh-config contiv-node3 | grep IdentityFile | awk '{print $2}' | xargs)
 popd
 # Extract and launch the installer
+mkdir -p release
 cd release
 if [ "$install_version" != "contiv-devbuild" ];then
   # For release builds, get the build from github releases
@@ -47,3 +48,4 @@ EOF
 done
 echo "Install FAILED"
 exit 1
+
