@@ -13,7 +13,7 @@ install_version="contiv-${BUILD_VERSION:-devbuild}"
 default_net_cidr="${DEFAULT_NET:-20.1.1.0/24}"
 
 # For local builds, copy the build binaries to the vagrant node, using the vagrant ssh-key
-if [ "$install_version" = "contiv-devbuild" ];then
+if [ -f "release/${install_version}.tgz" ];then
   pushd cluster
   ssh_key=$(CONTIV_KUBEADM=1 vagrant ssh-config contiv-node1 | grep IdentityFile | awk '{print $2}' | xargs)
   popd
