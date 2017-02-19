@@ -16,7 +16,7 @@ popd
 # Extract and launch the installer
 mkdir -p release
 cd release
-if [ "$install_version" != "contiv-devbuild" ];then
+if [ ! -f "${install_version}.tgz" ];then
   # For release builds, get the build from github releases
   curl -L -O https://github.com/contiv/install/releases/download/${BUILD_VERSION}/${install_version}.tgz
 fi
