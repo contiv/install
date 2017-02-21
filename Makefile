@@ -1,12 +1,12 @@
 # this is the classic first makefile target, and it's also the default target
 # run when `make` is invoked with no specific target.
-all: release
+all: build
 
-# release creates a release package for contiv.
+# build creates a release package for contiv.
 # It uses a pre-built image specified by BUILD_VERSION.
-release: 
+build:
 	rm -rf release/
-	@bash ./scripts/release.sh
+	@bash ./scripts/build.sh
 
 # Brings up a demo cluster to install Contiv on - by default this is a docker, centos cluster.
 # It can be configured to start a RHEL cluster by setting CONTIV_NODE_OS=rhel7.
@@ -20,7 +20,8 @@ cluster-destroy:
 # demo-k8s brings up a cluster with k8s, runs the installer on it, and shows the URL
 # of the demo Contiv Admin Console which was set up
 # BUILD_VERSION must be setup to use a specific build, e.g.
-# export BUILD_VERSION-1.0.0-beta.3
+# export BUILD_VERSION=1.0.0-beta.3
+# Or run make as BUILD_VERSION=1.0.0-beta.3 make demo-k8s
 demo-k8s:
 	CONTIV_KUBEADM=1 make cluster
 	CONTIV_KUBEADM=1 make install-test-kubeadm
@@ -28,25 +29,26 @@ demo-k8s:
 # demo-swarm brings up a cluster with docker swarm, runs the installer on it, and shows the URL
 # of the demo Contiv Admin Console which was set up
 # BUILD_VERSION must be setup to use a specific build, e.g.
-# export BUILD_VERSION-1.0.0-beta.3
+# export BUILD_VERSION=1.0.0-beta.3
+# Or run make as BUILD_VERSION=1.0.0-beta.3 make demo-k8s
 demo-swarm:
 	make cluster
 	make install-test-swarm
 
-# Create a release and test the release installation on a vagrant cluster
+# Create a build and test the release installation on a vagrant cluster
 # TODO: The vagrant part of this can be optimized by taking snapshots instead
 # of creating a new set of VMs for each case
-release-test-kubeadm: release 
+release-test-kubeadm: build
 	# Test kubeadm (centos by default)
 	CONTIV_KUBEADM=1 make cluster
 	CONTIV_KUBEADM=1 make install-test-kubeadm
 
-release-test-swarm: release 
+release-test-swarm: build
 	# Test swarm (centos by default)
 	make cluster
 	make install-test-swarm
 
-release-test-kubelegacy: release 
+release-test-kubelegacy: build
 	# Test k8s ansible (centos by default)
 	make cluster
 	make install-test-kube-legacy 
@@ -67,6 +69,6 @@ install-test-swarm:
 # ci does everything necessary for a Github PR-triggered CI run.
 # currently, this means building a container image and running
 # all of the available tests.
-ci: release install-test-swarm install-test-kubeadm
+ci: build install-test-swarm install-test-kubeadm
 
-.PHONY: all release cluster cluster-destroy release-test-swarm release-test-kubeadm release-test-kubelegacy install-test-swarm install-test-kubeadm install-test-kube-legacy
+.PHONY: all build cluster cluster-destroy release-test-swarm release-test-kubeadm release-test-kubelegacy install-test-swarm install-test-kubeadm install-test-kube-legacy
