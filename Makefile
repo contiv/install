@@ -20,7 +20,8 @@ cluster-destroy:
 # demo-k8s brings up a cluster with k8s, runs the installer on it, and shows the URL
 # of the demo Contiv Admin Console which was set up
 # BUILD_VERSION must be setup to use a specific build, e.g.
-# export BUILD_VERSION-1.0.0-beta.3
+# export BUILD_VERSION=1.0.0-beta.3
+# Or run make as BUILD_VERSION=1.0.0-beta.3 make demo-k8s
 demo-k8s:
 	CONTIV_KUBEADM=1 make cluster
 	CONTIV_KUBEADM=1 make install-test-kubeadm
@@ -28,14 +29,13 @@ demo-k8s:
 # demo-swarm brings up a cluster with docker swarm, runs the installer on it, and shows the URL
 # of the demo Contiv Admin Console which was set up
 # BUILD_VERSION must be setup to use a specific build, e.g.
-# export BUILD_VERSION-1.0.0-beta.3
+# export BUILD_VERSION=1.0.0-beta.3
+# Or run make as BUILD_VERSION=1.0.0-beta.3 make demo-k8s
 demo-swarm:
 	make cluster
 	make install-test-swarm
 
 # Create a build and test the release installation on a vagrant cluster
-# This should only be used with devbuild, else install-test-kubeadm will fail to
-# obtain the release bits from github
 # TODO: The vagrant part of this can be optimized by taking snapshots instead
 # of creating a new set of VMs for each case
 release-test-kubeadm: build

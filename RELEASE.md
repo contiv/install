@@ -12,7 +12,7 @@ TBD
 	docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
 	```
 
-2. Build docker binary image. This would create a docker image contiv/install:$BUILD_VERSION.
+2. Build docker binary image. This would create a docker image contiv/install:$BUILD_VERSION. It also creates two release bundles - contiv-${BUILD_VETSION}.tgz and contiv-full-${BUILD_VERSION}.tgz. This version should be tested locally using a vagrant setup with release-test-* make targets.
 
 	```
 	make build
