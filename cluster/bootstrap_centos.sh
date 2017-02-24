@@ -21,6 +21,3 @@ yum install -y docker kubelet kubeadm kubectl kubernetes-cni
 systemctl enable docker && systemctl start docker
 systemctl enable kubelet && systemctl start kubelet
 
-systemctl stop firewalld
-systemctl disable firewalld
-
