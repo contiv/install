@@ -16,9 +16,9 @@ popd
 # Extract and launch the installer
 mkdir -p release
 cd release
-if [ ! -f "${install_version}.tgz" ];then
-  # For release builds, get the build from github releases
-  curl -L -O https://github.com/contiv/install/releases/download/${BUILD_VERSION}/${install_version}.tgz
+if [ ! -f "${install_version}.tgz" ]; then
+	# For release builds, get the build from github releases
+	curl -L -O https://github.com/contiv/install/releases/download/${BUILD_VERSION}/${install_version}.tgz
 fi
 
 tar xf $install_version.tgz
@@ -27,25 +27,23 @@ cd $install_version
 
 # Wait for CONTIV to start for up to 10 minutes
 sleep 10
-for i in {0..20}
-do
-  response=$(curl -k -H -s "Content-Type: application/json" -X POST -d '{"username": "admin", "password": "admin"}' https://$contiv_master:10000/api/v1/auth_proxy/login || true)
-  if [[ $response == *"token"* ]]; then
-    echo "Install SUCCESS"
-    echo ""
-    cat <<EOF
+for i in {0..20}; do
+	response=$(curl -k -H -s "Content-Type: application/json" -X POST -d '{"username": "admin", "password": "admin"}' https://$contiv_master:10000/api/v1/auth_proxy/login || true)
+	if [[ $response == *"token"* ]]; then
+		echo "Install SUCCESS"
+		echo ""
+		cat <<EOF
   NOTE: Because the Contiv Admin Console is using a self-signed certificate for this demo,
   you will see a security warning when the page loads.  You can safely dismiss it.
   
   You can access the Contiv master node with:
     cd cluster && vagrant ssh contiv-node3
 EOF
-    exit 0
-  else
-    echo "$i. Retry login to Contiv"
-    sleep 30
-  fi
+		exit 0
+	else
+		echo "$i. Retry login to Contiv"
+		sleep 30
+	fi
 done
 echo "Install FAILED"
 exit 1
-

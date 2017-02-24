@@ -13,19 +13,19 @@ install_version="contiv-${BUILD_VERSION:-devbuild}"
 default_net_cidr="${DEFAULT_NET:-20.1.1.0/24}"
 
 # For local builds, copy the build binaries to the vagrant node, using the vagrant ssh-key
-if [ -f "release/${install_version}.tgz" ];then
-  pushd cluster
-  ssh_key=$(CONTIV_KUBEADM=1 vagrant ssh-config contiv-node1 | grep IdentityFile | awk '{print $2}' | xargs)
-  popd
-  dest_path=${CONTIV_TARGET:-"/home/vagrant"}
-  ssh_opts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+if [ -f "release/${install_version}.tgz" ]; then
+	pushd cluster
+	ssh_key=$(CONTIV_KUBEADM=1 vagrant ssh-config contiv-node1 | grep IdentityFile | awk '{print $2}' | xargs)
+	popd
+	dest_path=${CONTIV_TARGET:-"/home/vagrant"}
+	ssh_opts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
-  # Copy the installation folder
-  scp $ssh_opts -i $ssh_key release/${install_version}.tgz $user@$contiv_master:$dest_path
-  curl_cmd="echo 'Devbuild'"
+	# Copy the installation folder
+	scp $ssh_opts -i $ssh_key release/${install_version}.tgz $user@$contiv_master:$dest_path
+	curl_cmd="echo 'Devbuild'"
 else
-  # github redirects you to a signed AWS URL, so we need to follow redirects with -L
-  curl_cmd="curl -L -O https://github.com/contiv/install/releases/download/${BUILD_VERSION}/${install_version}.tgz"
+	# github redirects you to a signed AWS URL, so we need to follow redirects with -L
+	curl_cmd="curl -L -O https://github.com/contiv/install/releases/download/${BUILD_VERSION}/${install_version}.tgz"
 fi
 
 # Extract the install bundle and launch the installer
@@ -50,13 +50,12 @@ set -e
 
 # Wait for CONTIV to start for up to 10 minutes
 sleep 10
-for i in {0..20}
-do
-  response=$(curl -k -H -s "Content-Type: application/json" -X POST -d '{"username": "admin", "password": "admin"}' https://$contiv_master:10000/api/v1/auth_proxy/login || true)
-  if [[ $response == *"token"* ]]; then
-    echo "Install SUCCESS"
-    echo ""
-    cat <<EOF
+for i in {0..20}; do
+	response=$(curl -k -H -s "Content-Type: application/json" -X POST -d '{"username": "admin", "password": "admin"}' https://$contiv_master:10000/api/v1/auth_proxy/login || true)
+	if [[ $response == *"token"* ]]; then
+		echo "Install SUCCESS"
+		echo ""
+		cat <<EOF
   NOTE: Because the Contiv Admin Console is using a self-signed certificate for this demo,
   you will see a security warning when the page loads.  You can safely dismiss it.
   
@@ -64,14 +63,14 @@ do
     cd cluster && CONTIV_KUBEADM=1 vagrant ssh contiv-node1
 
 EOF
-    if [ "$install_version" != "contiv-devbuild" ];then
-      CONTIV_KUBEADM=1 vagrant ssh contiv-node1 -- "${SETUP_DEFAULT_NET}"
-    fi
-    exit 0
-  else
-    echo "$i. Retry login to Contiv"
-    sleep 30
-  fi
+		if [ "$install_version" != "contiv-devbuild" ]; then
+			CONTIV_KUBEADM=1 vagrant ssh contiv-node1 -- "${SETUP_DEFAULT_NET}"
+		fi
+		exit 0
+	else
+		echo "$i. Retry login to Contiv"
+		sleep 30
+	fi
 done
 echo "Install FAILED"
 exit 1
