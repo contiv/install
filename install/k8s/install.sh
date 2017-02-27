@@ -1,5 +1,7 @@
 #!/bin/bash
-# This is the uninstall script for Contiv.
+# This is the install script for Contiv.
+
+set -euo pipefail
 
 #
 # The following parameters are user defined - and vary for each installation
