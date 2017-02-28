@@ -44,7 +44,9 @@ echo "export http_proxy='$1'" >> ~/.profile
 echo "export https_proxy='$2'" >> ~/.profile
 source /etc/profile.d/envvar.sh
 sudo yum install -y net-tools
-echo $3 > /etc/hosts
+cat <<EOF > /etc/hosts
+$3
+EOF
 ifup eth1
 SCRIPT
 
