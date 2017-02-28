@@ -8,7 +8,7 @@ CERT_PATH="$PREFIX/cert.pem"
 
 # if both files exist, just exit
 if [[ -f $KEY_PATH && -f $CERT_PATH ]]; then
-    exit 0
+	exit 0
 fi
 
 rm -f $KEY_PATH

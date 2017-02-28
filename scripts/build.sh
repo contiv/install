@@ -12,40 +12,40 @@ contiv_version=${CONTIV_VERSION:-"1.0.0-beta.3"}
 etcd_version=${CONTIV_ETCD_VERSION:-2.3.7}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
 
-function usage {
-  echo "Usage:"
-  echo "./release.sh -a <ACI gateway image> -c <contiv version> -e <etcd version> -p <API proxy image version> " 
-  exit 1
+function usage() {
+	echo "Usage:"
+	echo "./release.sh -a <ACI gateway image> -c <contiv version> -e <etcd version> -p <API proxy image version> "
+	exit 1
 }
 
-function error_ret {
-  echo ""
-  echo $1
-  exit 1
+function error_ret() {
+	echo ""
+	echo $1
+	exit 1
 }
 
 while getopts ":a:p:c:e:" opt; do
-    case $opt in
-       a)
-          aci_gw_version=$OPTARG
-          ;;
-       c)
-          contiv_version=$OPTARG
-          ;;
-       e)
-          etcd_version=$OPTARG
-          ;;
-       p)
-          auth_proxy_version=$OPTARG
-          ;;
-       :)
-          echo "An argument required for $OPTARG was not passed"
-          usage
-          ;;
-       ?)
-          usage
-          ;;
-     esac
+	case $opt in
+		a)
+			aci_gw_version=$OPTARG
+			;;
+		c)
+			contiv_version=$OPTARG
+			;;
+		e)
+			etcd_version=$OPTARG
+			;;
+		p)
+			auth_proxy_version=$OPTARG
+			;;
+		:)
+			echo "An argument required for $OPTARG was not passed"
+			usage
+			;;
+		?)
+			usage
+			;;
+	esac
 done
 
 release_dir="release"
@@ -70,7 +70,6 @@ cp -rf scripts/generate-certificate.sh $output_dir/install
 # Get the ansible support files
 chmod +x $output_dir/install/genInventoryFile.py
 chmod +x $output_dir/install/generate-certificate.sh
-
 
 # This is maybe optional - but assume we need it for
 curl -sSL https://github.com/contiv/netplugin/releases/download/$contiv_version/netplugin-$contiv_version.tar.bz2 -o $output_dir/netplugin-$contiv_version.tar.bz2
@@ -134,13 +133,13 @@ tar czf $tmp_output_file -C $release_dir .
 
 # Save the auth proxy & aci-gw images for packaging the full docker images with contiv install binaries
 if [ "$(docker images -q contiv/auth_proxy:$auth_proxy_version 2>/dev/null)" == "" ]; then
-  docker pull contiv/auth_proxy:$auth_proxy_version
+	docker pull contiv/auth_proxy:$auth_proxy_version
 fi
 proxy_image=$(docker images -q contiv/auth_proxy:$auth_proxy_version)
 docker save $proxy_image -o $binary_cache/auth-proxy-image.tar
 
 if [ "$(docker images -q contiv/aci-gw:$aci_gw_version 2>/dev/null)" == "" ]; then
-  docker pull contiv/aci-gw:$aci_gw_version
+	docker pull contiv/aci-gw:$aci_gw_version
 fi
 aci_image=$(docker images -q contiv/aci-gw:$aci_gw_version)
 docker save $aci_image -o $binary_cache/aci-gw-image.tar
@@ -153,7 +152,6 @@ sed -i.bak "s#.*contiv_network_local_install.*#  \"contiv_network_local_install\
 
 # Create the full tar bundle
 tar czf $tmp_full_output_file -C $release_dir .
-
 
 mv $tmp_output_file $output_file
 mv $tmp_full_output_file $full_output_file
