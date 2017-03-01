@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 if [ "$1" = "-h" ]; then
   echo "Usage: ./install/k8s/uninstall.sh to uninstall contiv"
   echo "       ./install/k8s/uninstall.sh etcd-cleanup to uninstall contiv and cleanup contiv data"
