@@ -20,7 +20,7 @@ yum install -y docker kubelet kubeadm kubectl kubernetes-cni ntp
 
 systemctl enable docker && systemctl start docker
 systemctl enable kubelet && systemctl start kubelet
-systemctl enable ntp && systemctl start ntp
+systemctl enable ntpd && systemctl start ntpd
 
-systemctl -q is-active firewalld && systemctl stop firewalld
-systemctl -q is-enabled firewalld && systemctl disable firewalld
+systemctl -q is-active firewalld && systemctl stop firewalld || true
+systemctl -q is-enabled firewalld && systemctl disable firewalld || true
