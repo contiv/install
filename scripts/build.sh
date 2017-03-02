@@ -11,6 +11,7 @@ aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
 contiv_version=${CONTIV_VERSION:-"1.0.0-beta.3"}
 etcd_version=${CONTIV_ETCD_VERSION:-2.3.7}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
+ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-"1.0.0-beta.3.1"}
 
 function usage() {
 	echo "Usage:"
@@ -102,8 +103,8 @@ sed -i.bak "s/__ETCD_VERSION__/$etcd_version/g" $ansible_env
 
 chmod +x $k8s_yaml_dir/install.sh
 chmod +x $k8s_yaml_dir/uninstall.sh
-sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$VERSION/g" $ansible_yaml_dir/install_swarm.sh
-sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$VERSION/g" $ansible_yaml_dir/uninstall_swarm.sh
+sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$ansible_image_version/g" $ansible_yaml_dir/install_swarm.sh
+sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$ansible_image_version/g" $ansible_yaml_dir/uninstall_swarm.sh
 chmod +x $ansible_yaml_dir/install_swarm.sh
 chmod +x $ansible_yaml_dir/uninstall_swarm.sh
 chmod +x $output_dir/install/ansible/install.sh
@@ -112,17 +113,10 @@ chmod +x $output_dir/install/ansible/uninstall.sh
 rm -f $k8s_yaml_dir/*.bak
 rm -f $ansible_yaml_dir/*.bak
 
-# Build the docker container for ansible installation
-ansible_spec=$output_dir/install/ansible/Dockerfile
-docker build -t contiv/install:$VERSION -f $ansible_spec $output_dir
-
 rm -rf $output_dir/scripts
-echo "**************************************************************************************************"
-echo " Please ensure that contiv/install:$VERSION is pushed to docker hub"
-echo "**************************************************************************************************"
 
 # Clean up the Dockerfiles, they are not part of the release bits.
-rm -f $ansible_spec
+rm -f $output_dir/install/ansible/Dockerfile
 
 # Create the binary cache folder
 binary_cache=$output_dir/contiv_cache

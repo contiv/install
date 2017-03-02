@@ -104,12 +104,17 @@ node_name=$(grep $netmaster $host_inventory | awk '{print $1}' | xargs)
 # Get the service VIP for netmaster for the control interface
 service_vip=$(ansible $node_name -m setup $ans_opts -i $host_inventory | grep -A 100 ansible_$netmaster_control_if | grep -A 4 ipv4 | grep address | awk -F \" '{print $4}'| xargs)
 
+if [ "$service_vip" == "" ]; then
+  service_vip=$netmaster
+fi
 if [ "$cluster_store" == "" ];then
   cluster_store="etcd://$service_vip:2379"
 fi
 
-sed -i.bak "s/__NETMASTER_IP__/$service_vip/g" "$env_file"
-sed -i.bak "s#__CLUSTER_STORE__#$cluster_store#g" "$env_file"
+sed -i.bak "s#.*service_vip.*#\"service_vip\":\"$service_vip\",#g" "$env_file"
+sed -i.bak "s#.*cluster_store.*#\"cluster_store\":\"$cluster_store\",#g" "$env_file"
+
+
 sed -i.bak "s/.*docker_reset_container_state.*/\"docker_reset_container_state\":$reset,/g" $env_file
 sed -i.bak "s/.*docker_reset_image_state.*/\"docker_reset_image_state\":$reset_images,/g" $env_file
 sed -i.bak "s/.*etcd_cleanup_state.*/\"etcd_cleanup_state\":$reset,/g" $env_file
@@ -157,5 +162,5 @@ else
   echo "========================================================="
   echo " Please check ./config/$log_file_name for errors."
   echo "========================================================="
+  exit 1
 fi
-

@@ -8,6 +8,11 @@ build:
 	rm -rf release/
 	@bash ./scripts/build.sh
 
+# ansible-image creates the docker image for ansible container
+# It uses the version specified by BUILD_VERSION or creates an image with the latest tag.
+ansible-image:
+	@bash ./scripts/build_image.sh
+
 # Brings up a demo cluster to install Contiv on - by default this is a docker, centos cluster.
 # It can be configured to start a RHEL cluster by setting CONTIV_NODE_OS=rhel7.
 # It can be started with k8s kubeadm install by running with CONTIV_KUBEADM=1.
