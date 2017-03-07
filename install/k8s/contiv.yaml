@@ -28,6 +28,7 @@ spec:
           image: contiv/netplugin:__CONTIV_VERSION__
           args:
             - -pkubernetes
+            - -x
           env:
             - name: VLAN_IF
               value: __VLAN_IF__
