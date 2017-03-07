@@ -19,52 +19,51 @@ install_scheduler=False
 # This is the netmaster IP that needs to be provided for the installation to proceed
 netmaster=""
 
-
-usage () {
-  echo "Usage:"
-  echo "./install.sh -n <netmaster IP> -a <ansible options> -i <install scheduler stack> -m <network mode - standalone/aci> -d <fwd mode - routing/bridge> -v <ACI image>"
-  echo "This script is to be launched using the install_swarm.sh script. See the documentation for install_swarm.sh for a detailed description of options."
-  exit 1
+usage() {
+	echo "Usage:"
+	echo "./install.sh -n <netmaster IP> -a <ansible options> -i <install scheduler stack> -m <network mode - standalone/aci> -d <fwd mode - routing/bridge> -v <ACI image>"
+	echo "This script is to be launched using the install_swarm.sh script. See the documentation for install_swarm.sh for a detailed description of options."
+	exit 1
 }
 
 # Return printing the error
 error_ret() {
-  echo ""
-  echo "$1"
-  exit 1
+	echo ""
+	echo "$1"
+	exit 1
 }
 
 while getopts ":n:a:im:d:v:s:" opt; do
-    case $opt in
-       n)
-          netmaster=$OPTARG
-          ;;
-       a)
-          ans_opts=$OPTARG
-          ;;
-       i)
-          install_scheduler=True
-          ;;
-       m)
-          contiv_network_mode=$OPTARG
-          ;;
-       d)
-          fwd_mode=$OPTARG
-          ;;
-       v)
-          aci_image=$OPTARG
-          ;;
-       s)
-          cluster_store=$OPTARG
-      ;;
-       :)
-          echo "An argument required for $OPTARG was not passed"
-          usage
-          ;;
-       ?)
-          usage
-          ;;
-     esac
+	case $opt in
+		n)
+			netmaster=$OPTARG
+			;;
+		a)
+			ans_opts=$OPTARG
+			;;
+		i)
+			install_scheduler=True
+			;;
+		m)
+			contiv_network_mode=$OPTARG
+			;;
+		d)
+			fwd_mode=$OPTARG
+			;;
+		v)
+			aci_image=$OPTARG
+			;;
+		s)
+			cluster_store=$OPTARG
+			;;
+		:)
+			echo "An argument required for $OPTARG was not passed"
+			usage
+			;;
+		?)
+			usage
+			;;
+	esac
 done
 
 echo "Generating Ansible configuration"
@@ -76,13 +75,13 @@ node_info="$inventory/contiv_nodes"
 ./install/genInventoryFile.py "$contiv_config" "$host_inventory" "$node_info" $contiv_network_mode $fwd_mode
 
 if [ "$netmaster" = "" ]; then
-  # Use the first master node as netmaster
-  netmaster=$(grep -A 5 netplugin-master "$host_inventory" | grep -m 1 ansible_ssh_host | awk '{print $2}' | awk -F "=" '{print $2}' | xargs)
-  echo "Using $netmaster as the master node"
+	# Use the first master node as netmaster
+	netmaster=$(grep -A 5 netplugin-master "$host_inventory" | grep -m 1 ansible_ssh_host | awk '{print $2}' | awk -F "=" '{print $2}' | xargs)
+	echo "Using $netmaster as the master node"
 fi
 
 if [ "$netmaster" = "" ]; then
-  usage
+	usage
 fi
 
 ansible_path=./ansible
@@ -93,38 +92,41 @@ netmaster_control_if=$(grep -A10 $netmaster $contiv_config | grep -m 1 control |
 # Get the ansible node
 node_name=$(grep $netmaster $host_inventory | awk '{print $1}' | xargs)
 # Get the service VIP for netmaster for the control interface
-service_vip=$(ansible $node_name -m setup $ans_opts -i $host_inventory | grep -A 100 ansible_$netmaster_control_if | grep -A 4 ipv4 | grep address | awk -F \" '{print $4}'| xargs)
+service_vip=$(ansible $node_name -m setup $ans_opts -i $host_inventory | grep -A 100 ansible_$netmaster_control_if | grep -A 4 ipv4 | grep address | awk -F \" '{print $4}' | xargs)
 
-if [ "$cluster_store" == "" ];then
-  cluster_store="etcd://$service_vip:2379"
+if [ "$service_vip" == "" ]; then
+	service_vip=$netmaster
+fi
+if [ "$cluster_store" == "" ]; then
+	cluster_store="etcd://$service_vip:2379"
 fi
 
-sed -i.bak "s/__NETMASTER_IP__/$service_vip/g" "$env_file"
-sed -i.bak "s#__CLUSTER_STORE__#$cluster_store#g" "$env_file"
+sed -i.bak "s#.*service_vip.*#\"service_vip\":\"$service_vip\",#g" "$env_file"
+sed -i.bak "s#.*cluster_store.*#\"cluster_store\":\"$cluster_store\",#g" "$env_file"
 
 # Copy certs
 cp /var/contiv/cert.pem /ansible/roles/auth_proxy/files/
 cp /var/contiv/key.pem /ansible/roles/auth_proxy/files/
 
-if [ "$aci_image" != "" ];then
-  sed -i.bak "s#.*aci_gw_image.*#\"aci_gw_image\":\"$aci_image\",#g" "$env_file"
+if [ "$aci_image" != "" ]; then
+	sed -i.bak "s#.*aci_gw_image.*#\"aci_gw_image\":\"$aci_image\",#g" "$env_file"
 fi
 
 echo "Installing Contiv"
 # Always install the base, install the scheduler stack/etcd if required
-echo '- include: install_base.yml' > $ansible_path/install_plays.yml
-if [ $install_scheduler = True ];then
-  echo '- include: install_docker.yml' >> $ansible_path/install_plays.yml
-  echo '- include: install_etcd.yml' >> $ansible_path/install_plays.yml
-  echo '- include: install_scheduler.yml' >> $ansible_path/install_plays.yml
+echo '- include: install_base.yml' >$ansible_path/install_plays.yml
+if [ $install_scheduler = True ]; then
+	echo '- include: install_docker.yml' >>$ansible_path/install_plays.yml
+	echo '- include: install_etcd.yml' >>$ansible_path/install_plays.yml
+	echo '- include: install_scheduler.yml' >>$ansible_path/install_plays.yml
 else
-  if [ "$cluster_store" = "" ];then
-    echo '- include: install_etcd.yml' >> $ansible_path/install_plays.yml
-  fi
+	if [ "$cluster_store" = "" ]; then
+		echo '- include: install_etcd.yml' >>$ansible_path/install_plays.yml
+	fi
 fi
 # Install contiv & API Proxy
-echo '- include: install_contiv.yml' >> $ansible_path/install_plays.yml
-echo '- include: install_auth_proxy.yml' >> $ansible_path/install_plays.yml
+echo '- include: install_contiv.yml' >>$ansible_path/install_plays.yml
+echo '- include: install_auth_proxy.yml' >>$ansible_path/install_plays.yml
 
 log_file_name="contiv_install_$(date -u +%m-%d-%Y.%H-%M-%S.UTC).log"
 log_file="/var/contiv/$log_file_name"
@@ -142,25 +144,25 @@ unreachable=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "unreachable=" '{prin
 failed=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "failed=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
 
 if [ "$unreachable" = "" ] && [ "$failed" = "" ]; then
-  echo "Installation is complete"
-  echo "========================================================="
-  echo " "
-  echo "Please export DOCKER_HOST=tcp://$netmaster:2375 in your shell before proceeding"
-  echo "Contiv UI is available at https://$netmaster:10000"
-  echo "Please use the first run wizard or configure the setup as follows:"
-  echo " Configure forwarding mode (optional, default is bridge)."
-  echo " netctl global set --fwd-mode routing"
-  echo " Configure ACI mode (optional)"
-  echo " netctl global set --fabric-mode aci --vlan-range <start>-<end>"
-  echo " Create a default network"
-  echo " netctl net create -t default --subnet=<CIDR> default-net"
-  echo " For example, netctl net create -t default --subnet=20.1.1.0/24 default-net"
-  echo " "
-  echo "========================================================="
+	echo "Installation is complete"
+	echo "========================================================="
+	echo " "
+	echo "Please export DOCKER_HOST=tcp://$netmaster:2375 in your shell before proceeding"
+	echo "Contiv UI is available at https://$netmaster:10000"
+	echo "Please use the first run wizard or configure the setup as follows:"
+	echo " Configure forwarding mode (optional, default is bridge)."
+	echo " netctl global set --fwd-mode routing"
+	echo " Configure ACI mode (optional)"
+	echo " netctl global set --fabric-mode aci --vlan-range <start>-<end>"
+	echo " Create a default network"
+	echo " netctl net create -t default --subnet=<CIDR> default-net"
+	echo " For example, netctl net create -t default --subnet=20.1.1.0/24 default-net"
+	echo " "
+	echo "========================================================="
 else
-  echo "Installation failed"
-  echo "========================================================="
-  echo " Please check ./config/$log_file_name for errors."
-  echo "========================================================="
-  exit 1
+	echo "Installation failed"
+	echo "========================================================="
+	echo " Please check ./config/$log_file_name for errors."
+	echo "========================================================="
+	exit 1
 fi

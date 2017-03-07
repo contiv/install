@@ -130,7 +130,11 @@ if [[ -f $ans_key ]]; then
   cp "$ans_key" "$host_ans_key"
 fi
 
-ans_opts="$ans_opts --private-key $def_ans_key -u $ans_user"
+if [ "$ans_opts" == "" ]; then
+  ans_opts=" --private-key $def_ans_key -u $ans_user"
+else
+  ans_opts=$(printf '%q', $ans_opts)" --private-key $def_ans_key -u $ans_user"
+fi
 echo "Starting the uninstaller container"
 image_name="contiv/install:__CONTIV_INSTALL_VERSION__"
 install_mount="-v $(pwd)/install:/install:Z"
