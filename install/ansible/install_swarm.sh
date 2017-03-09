@@ -6,7 +6,7 @@
 
 # Ansible options. By default, this specifies a private key to be used and the vagrant user
 ans_opts=""
-ans_user="vagrant"
+ans_user="root"
 ans_key=$src_conf_path/insecure_private_key
 install_scheduler=""
 
@@ -158,4 +158,4 @@ ansible_mount="-v $(pwd)/ansible:/ansible:Z"
 config_mount="-v $src_conf_path:$container_conf_path:Z"
 cache_mount="-v $(pwd)/contiv_cache:/var/contiv_cache:Z"
 mounts="$install_mount $ansible_mount $cache_mount $config_mount"
-docker run --rm $mounts $image_name sh -c "./install/ansible/install.sh $netmaster_param -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param $cluster_param"
+docker run --rm --net=host $mounts $image_name sh -c "./install/ansible/install.sh $netmaster_param -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param $cluster_param"
