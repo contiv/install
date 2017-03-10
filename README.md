@@ -49,10 +49,16 @@ If you need to remove Contiv from Docker Swarm and return to your original state
 * Use curl to get the installer bundle: <br>`curl -L -O https://github.com/contiv/install/releases/download/$VERSION/contiv-$VERSION.tgz`
 * Extract the install bundle <br>`tar xf contiv-$VERSION.tgz`. 
 * Change directories to the extracted folder <br>`cd contiv-$VERSION`
-* Run `sudo ./install/k8s/install.sh -n $CONTIV_MASTER`
-  where `$CONTIV_MASTER` is the Contiv proxy IP.
+* To install Contiv with VXLAN:<br> `sudo ./install/k8s/install.sh -n $CONTIV_MASTER`
+* To install Contiv specifying a data plane interface for VLAN:<br> `sudo ./install/k8s/install.sh -n $CONTIV_MASTER -v <data plane interface like eth1>`
+  where `$CONTIV_MASTER` is the Contiv proxy or Net Master IP.
 * To see additional install options, run <br> `./install/ansible/install.sh`.
 
 ### Removing Contiv
-If you need to remove Contiv, and get back to your original state, run:
+* To uninstall Contiv, retaining the etcd state, run:<br>
 `sudo ./install/k8s/uninstall.sh`
+* To uninstall Contiv, cleaning up the etcd state, run:<br>
+`sudo ./install/k8s/uninstall.sh etcd-cleanup`. <br>Use this option to cleanup all the Contiv network state. 
+* To stop Contiv, go to the install folder contiv-$VERSION and run:<br> `kubectl delete -f .contiv.yaml`
+* To start Contiv, go to the install folder contiv-$VERSION and run:<br> `kubectl apply -f .contiv.yaml`
+* To remove etcd state when Contiv is stopped, run: <br> `rm -rf /var/etcd/contiv-data`
