@@ -51,7 +51,10 @@ If you need to remove Contiv from Docker Swarm and return to your original state
 * Change directories to the extracted folder <br>`cd contiv-$VERSION`
 * To install Contiv with VXLAN:<br> `sudo ./install/k8s/install.sh -n $CONTIV_MASTER`
 * To install Contiv specifying a data plane interface for VLAN:<br> `sudo ./install/k8s/install.sh -n $CONTIV_MASTER -v <data plane interface like eth1>`
-  where `$CONTIV_MASTER` is the Contiv proxy or Net Master IP.
+* To install Contiv with ACI: <br>`./install/k8s/install.sh -n $CONTIV_MASTER -a <APIC URL> -u <APIC User> -p <APIC Password> -l <Leaf Nodes> -d <Physical Domain> -e <EPG Bridge domain> -m <APIC contracts unrestricted mode>
+  ` <br> For example: <br> `./install/k8s/install.sh -n <netmaster DNS/IP> -a https://apic_host:443 -u apic_user -p apic_password -l topology/pod-xxx/node-xxx -d phys_domain -e not_specified -m no
+  `
+ <br> where `$CONTIV_MASTER` is the Contiv proxy or Net Master IP.
 * To see additional install options, run <br> `./install/ansible/install.sh`.
 
 ### Removing Contiv

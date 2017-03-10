@@ -66,6 +66,7 @@ rm -rf $output_file
 # Top level install.sh which will either take k8s/swarm install params and do the required.
 mkdir -p $output_dir
 cp -rf install $output_dir
+cp README.md $output_dir
 cp -rf scripts/generate-certificate.sh $output_dir/install
 
 # Get the ansible support files
