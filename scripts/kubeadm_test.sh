@@ -7,7 +7,6 @@ contiv_master=$(grep -B 3 master cluster/.cfg.yml | grep -oE "\b([0-9]{1,3}\.){3
 
 # Default user is vagrant
 user=${CONTIV_SSH_USER:-"vagrant"}
-
 # If BUILD_VERSION is not defined, we use a local dev build, that must have been created with make release
 install_version="contiv-${BUILD_VERSION:-devbuild}"
 default_net_cidr="${DEFAULT_NET:-20.1.1.0/24}"
@@ -15,9 +14,12 @@ default_net_cidr="${DEFAULT_NET:-20.1.1.0/24}"
 # For local builds, copy the build binaries to the vagrant node, using the vagrant ssh-key
 if [ -f "release/${install_version}.tgz" ]; then
 	pushd cluster
-	ssh_key=$(CONTIV_KUBEADM=1 vagrant ssh-config contiv-node1 | grep IdentityFile | awk '{print $2}' | xargs)
+	ssh_key=${CONTIV_SSH_KEY:-""}
+	if [ "$ssh_key" == "" ]; then
+		ssh_key=$(CONTIV_KUBEADM=1 vagrant ssh-config contiv-node1 | grep IdentityFile | awk '{print $2}' | xargs)
+	fi
 	popd
-	dest_path=${CONTIV_TARGET:-"/home/vagrant"}
+	dest_path=${CONTIV_TARGET:-"/home/$user"}
 	ssh_opts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
 	# Copy the installation folder
@@ -27,7 +29,6 @@ else
 	# github redirects you to a signed AWS URL, so we need to follow redirects with -L
 	curl_cmd="curl -L -O https://github.com/contiv/install/releases/download/${BUILD_VERSION}/${install_version}.tgz"
 fi
-
 # Extract the install bundle and launch the installer
 set +e # read returns 1 when it succeeds
 read -r -d '' COMMANDS <<-EOF
@@ -39,6 +40,7 @@ EOF
 set -e
 
 cd cluster
+echo $CONTIV_NODE_OS
 CONTIV_KUBEADM=1 vagrant ssh contiv-node1 -- "$COMMANDS"
 
 set +e
@@ -48,6 +50,7 @@ read -r -d '' SETUP_DEFAULT_NET <<-EOF
 EOF
 set -e
 
+echo "*****************"
 # Wait for CONTIV to start for up to 10 minutes
 sleep 10
 for i in {0..20}; do

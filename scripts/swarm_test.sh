@@ -11,7 +11,10 @@ user=${CONTIV_SSH_USER:-"vagrant"}
 # If BUILD_VERSION is not defined, we use a local dev build, that must have been created with make release
 install_version="contiv-${BUILD_VERSION:-devbuild}"
 pushd cluster
-ssh_key=$(vagrant ssh-config contiv-node3 | grep IdentityFile | awk '{print $2}' | xargs)
+ssh_key=${CONTIV_SSH_KEY:-""}
+if [ "$ssh_key" == "" ]; then
+  ssh_key=$(vagrant ssh-config contiv-node3 | grep IdentityFile | awk '{print $2}' | xargs)
+fi
 popd
 # Extract and launch the installer
 mkdir -p release
@@ -23,7 +26,7 @@ fi
 
 tar xf $install_version.tgz
 cd $install_version
-./install/ansible/install_swarm.sh -f ../../cluster/.cfg.yml -e $ssh_key -u vagrant -i
+./install/ansible/install_swarm.sh -f ../../cluster/.cfg.yml -e $ssh_key -u $user -i
 
 # Wait for CONTIV to start for up to 10 minutes
 sleep 10

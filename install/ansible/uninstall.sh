@@ -77,7 +77,8 @@ while getopts ":n:a:im:d:v:rgs:" opt; do
 done
 
 echo "Generating Ansible configuration"
-inventory=".gen"
+inventory="/var/contiv/.gen"
+inventory_log="/var/contiv/host_inventory.log"
 mkdir -p "$inventory"
 host_inventory="$inventory/contiv_hosts"
 node_info="$inventory/contiv_nodes"
@@ -96,6 +97,22 @@ fi
 
 ansible_path=./ansible
 env_file=install/ansible/env.json
+# Verify ansible can reach all hosts
+
+echo "Verifying ansible reachability"
+ansible all $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' >& $inventory_log
+egrep 'FAIL|UNREACHABLE' $inventory_log >& /dev/null
+if [ $? -eq 0 ]; then
+   echo "WARNING"
+   echo "WARNING Some of the hosts are not accessible via passwordless SSH"
+   echo "WARNING"
+   echo "`egrep 'FAIL|UNREACHABLE' $inventory_log`"
+   echo " "
+   echo "This means either the host is unreachable or passwordless SSH is not"
+   echo "set up for it. It is RECOMMENDED that you resolve this before proceeding."
+
+   exit 1
+ fi
 
 # Get the netmaster control interface
 netmaster_control_if=$(grep -A10 $netmaster $contiv_config | grep -m 1 control | awk -F ":" '{print $2}' | xargs)
