@@ -4,8 +4,13 @@ require 'rubygems'
 require 'fileutils'
 require 'yaml'
 
-token = 'd900e1.8a392798f13b33a4'
 DEFAULT_K8S_VERSION = 'v1.4.7'.freeze
+UBUNTU = 'ubuntu'.freeze
+CENTOS = 'centos'.freeze
+RHEL = 'rhel7'.freeze
+
+token = 'd900e1.8a392798f13b33a4'
+node_os = ENV['CONTIV_NODE_OS'] || CENTOS
 
 # method to create an etc_hosts file based on the cluster info
 def create_etc_hosts(num_nodes, base_ip, start)
@@ -21,6 +26,7 @@ end
 
 # method to create an cfg file based on the cluster info
 def create_cfg_info(num_nodes, node_ips)
+  node_os = ENV['CONTIV_NODE_OS'] || CENTOS
   conn = {}
   num_nodes.times do |n|
     node_ip = node_ips[n]
@@ -29,8 +35,10 @@ def create_cfg_info(num_nodes, node_ips)
            else
              {}
            end
-    node['control'] = ENV['CONTIV_CONTROL_IF'] || 'eth1'
-    node['data'] = ENV['CONTIV_DATA_IF'] || 'eth2'
+    def_ctrl_if = node_os == UBUNTU ? 'enp0s8' : 'eth1'
+    def_data_if = node_os == UBUNTU ? 'enp0s9' : 'eth2'
+    node['control'] = ENV['CONTIV_CONTROL_IF'] || def_ctrl_if
+    node['data'] = ENV['CONTIV_DATA_IF'] || def_data_if
     conn[node_ip] = node
   end
   cfg_data = { 'CONNECTION_INFO' => conn }
@@ -43,22 +51,27 @@ echo "export https_proxy='$2'" >> /etc/profile.d/envvar.sh
 echo "export http_proxy='$1'" >> ~/.profile
 echo "export https_proxy='$2'" >> ~/.profile
 source /etc/profile.d/envvar.sh
+SCRIPT
+
+provision_net = <<SCRIPT
 sudo yum install -y net-tools
 cat <<EOF > /etc/hosts
-$3
+$1
 EOF
 ifup eth1
 SCRIPT
 
+provision_key = <<SCRIPT
+sudo apt-get install python -y
+mkdir -p /home/ubuntu/.ssh/
+cat <<EOF >> /home/ubuntu/.ssh/authorized_keys
+$1
+EOF
+SCRIPT
+
 # begin execution here
-num_nodes = 2
-if ENV['CONTIV_NODES'] && ENV['CONTIV_NODES'] != ''
-  num_nodes = ENV['CONTIV_NODES'].to_i
-end
-base_ip = '192.168.2.'
-if ENV['CONTIV_IP_PREFIX'] && ENV['CONTIV_IP_PREFIX'] != ''
-  base_ip = ENV['CONTIV_IP_PREFIX']
-end
+num_nodes = ENV['CONTIV_NODES'] ? ENV['CONTIV_NODES'].to_i : 2
+base_ip = ENV['CONTIV_IP_PREFIX'] || '192.168.2.'
 start = ENV['CONTIV_KUBEADM'] ? 50 : 50 + num_nodes
 name_start = ENV['CONTIV_KUBEADM'] ? 1 : 1 + num_nodes
 node_ips = Array.new(num_nodes) { |n| base_ip + (n + start).to_s }
@@ -71,29 +84,38 @@ VAGRANTFILE_API_VERSION = '2'.freeze
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box_check_update = false
   config.vbguest.auto_update = false if Vagrant.has_plugin?('vagrant-vbguest')
-  if ENV['CONTIV_NODE_OS'] && ENV['CONTIV_NODE_OS'] == 'rhel7'
+  if node_os == RHEL
     config.registration.manager = 'subscription_manager'
     config.registration.username = ENV['CONTIV_RHEL_USER']
     config.registration.password = ENV['CONTIV_RHEL_PASSWD']
   end
 
-  config.ssh.insert_key = false
   num_nodes.times do |n|
     node_name = node_names[n]
     node_addr = node_ips[n]
     config.vm.define vm_name = node_name do |c|
-      if ENV['CONTIV_NODE_OS'] && ENV['CONTIV_NODE_OS'] == 'rhel7'
+      if node_os == RHEL
         # Download rhel7.2 box from https://access.redhat.com/downloads/content/293/ver=2/rhel---7/2.0.0/x86_64/product-software
         # Add it as rhel7 vagrant box add rhel-cdk-kubernetes-7.2-29.x86_64.vagrant-virtualbox.box --name=rhel7
         c.vm.box = 'rhel7'
+        config.ssh.insert_key = false
+      elsif node_os == UBUNTU
+        c.vm.box = 'ubuntu/xenial64'
       else
         c.vm.box = 'centos/7'
+        config.ssh.insert_key = false
       end
       c.vm.provision 'shell' do |s|
         s.inline = provision_node
-        etc_file = (ENV['VAGRANT_CWD'] || '.') + '/.etc_hosts'
-        hosts = File.read(etc_file)
-        s.args = [ENV['http_proxy'] || '', ENV['https_proxy'] || '', hosts]
+        s.args = [ENV['http_proxy'] || '', ENV['https_proxy'] || '']
+      end
+      if node_os != UBUNTU
+        c.vm.provision 'shell' do |s|
+          s.inline = provision_net
+          etc_file = (ENV['VAGRANT_CWD'] || '.') + '/.etc_hosts'
+          hosts = File.read(etc_file)
+          s.args = [hosts]
+        end
       end
 
       # configure ip address etc
@@ -116,13 +138,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         v.customize ['modifyvm', :id, '--paravirtprovider', 'kvm']
       end # v
 
+      if node_os == UBUNTU
+        c.vm.provision 'shell' do |s|
+          s.inline = provision_key
+          key = File.read(ENV['CONTIV_SSH_CERT'] || ENV['HOME'] + '/.ssh/id_rsa.pub')
+          s.args = [key]
+        end
+      end
       if ENV['CONTIV_KUBEADM']
-        c.vm.provision 'shell', inline: <<-EOS
-            sudo setenforce 0
-            sudo systemctl stop firewalld
-            sudo /etc/init.d/network restart
-            EOS
-        c.vm.provision :shell, path: 'bootstrap_centos.sh'
+        if node_os == UBUNTU
+          c.vm.provision :shell, path: 'bootstrap_ubuntu.sh'
+        else
+          c.vm.provision :shell, path: 'bootstrap_centos.sh'
+          c.vm.provision 'shell', inline: 'sudo setenforce 0'
+        end
         if n.zero?
           # Install kubernetes on master
           ks8_ver = ENV['CONTIV_K8S_VERSION'] || DEFAULT_K8S_VERSION
@@ -131,7 +160,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           # Install kubernetes on nodes
           c.vm.provision :shell, path: 'k8sworker_centos.sh', args: [token, master_ip]
         end # if
-      else
+      elsif node_os != UBUNTU
         c.vm.provision :shell, inline: 'yum install policycoreutils-python -y'
       end
     end # c

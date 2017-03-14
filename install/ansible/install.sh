@@ -12,9 +12,10 @@ scheduler_provider=${CONTIV_SCHEDULER_PROVIDER:-"native-swarm"}
 # Specify the etcd or cluster store here
 # If an etcd or consul cluster store is not provided, we will start an etcd instance
 cluster_store=""
+install_etcd=true
 
 # Should the scheduler stack (docker swarm or k8s be installed)
-install_scheduler=False
+install_scheduler=false
 
 # This is the netmaster IP that needs to be provided for the installation to proceed
 netmaster=""
@@ -42,7 +43,7 @@ while getopts ":n:a:im:d:v:s:" opt; do
 			ans_opts=$OPTARG
 			;;
 		i)
-			install_scheduler=True
+			install_scheduler=true
 			;;
 		m)
 			contiv_network_mode=$OPTARG
@@ -55,6 +56,7 @@ while getopts ":n:a:im:d:v:s:" opt; do
 			;;
 		s)
 			cluster_store=$OPTARG
+      install_etcd=false
 			;;
 		:)
 			echo "An argument required for $OPTARG was not passed"
@@ -67,7 +69,8 @@ while getopts ":n:a:im:d:v:s:" opt; do
 done
 
 echo "Generating Ansible configuration"
-inventory=".gen"
+inventory="/var/contiv/.gen"
+inventory_log="/var/contiv/host_inventory.log"
 mkdir -p "$inventory"
 host_inventory="$inventory/contiv_hosts"
 node_info="$inventory/contiv_nodes"
@@ -86,6 +89,19 @@ fi
 
 ansible_path=./ansible
 env_file=install/ansible/env.json
+# Verify ansible can reach all hosts
+
+echo "Verifying ansible reachability"
+ansible all $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' >& $inventory_log
+egrep 'FAIL|UNREACHABLE' $inventory_log >& /dev/null
+if [ $? -eq 0 ]; then
+   echo "WARNING Some of the hosts are not accessible via passwordless SSH"
+   echo " "
+   echo "This means either the host is unreachable or passwordless SSH is not"
+   echo "set up for it. Please resolve this before proceeding."
+
+   exit 1
+ fi
 
 # Get the netmaster control interface
 netmaster_control_if=$(grep -A10 $netmaster $contiv_config | grep -m 1 control | awk -F ":" '{print $2}' | xargs)
@@ -97,6 +113,7 @@ service_vip=$(ansible $node_name -m setup $ans_opts -i $host_inventory | grep -A
 if [ "$service_vip" == "" ]; then
 	service_vip=$netmaster
 fi
+
 if [ "$cluster_store" == "" ]; then
 	cluster_store="etcd://$service_vip:2379"
 fi
@@ -115,12 +132,12 @@ fi
 echo "Installing Contiv"
 # Always install the base, install the scheduler stack/etcd if required
 echo '- include: install_base.yml' >$ansible_path/install_plays.yml
-if [ $install_scheduler = True ]; then
+if [ "$install_scheduler" == "true" ]; then
 	echo '- include: install_docker.yml' >>$ansible_path/install_plays.yml
 	echo '- include: install_etcd.yml' >>$ansible_path/install_plays.yml
 	echo '- include: install_scheduler.yml' >>$ansible_path/install_plays.yml
 else
-	if [ "$cluster_store" = "" ]; then
+	if [ "$install_etcd" == "true" ]; then
 		echo '- include: install_etcd.yml' >>$ansible_path/install_plays.yml
 	fi
 fi

@@ -2,3 +2,5 @@
 cluster/.vagrant
 cluster/.etc_hosts
 cluster/.cfg.yml
+cluster/*.log
+release
