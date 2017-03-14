@@ -87,11 +87,13 @@ ansible_env=$ansible_yaml_dir/env.json
 
 k8s_yaml_dir=$output_dir/install/k8s/
 contiv_yaml=$k8s_yaml_dir/contiv.yaml
+cleanup_yaml=$k8s_yaml_dir/cleanup.yaml
 aci_gw_yaml=$k8s_yaml_dir/aci_gw.yaml
 auth_proxy_yaml=$k8s_yaml_dir/auth_proxy.yaml
 etcd_yaml=$k8s_yaml_dir/etcd.yaml
 
 sed -i.bak "s/__CONTIV_VERSION__/$contiv_version/g" $contiv_yaml
+sed -i.bak "s/__CONTIV_VERSION__/$contiv_version/g" $cleanup_yaml
 sed -i.bak "s/__API_PROXY_VERSION__/$auth_proxy_version/g" $auth_proxy_yaml
 sed -i.bak "s/__ACI_GW_VERSION__/$aci_gw_version/g" $aci_gw_yaml
 sed -i.bak "s/__ETCD_VERSION__/$etcd_version/g" $etcd_yaml

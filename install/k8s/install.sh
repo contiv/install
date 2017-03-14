@@ -245,7 +245,7 @@ cp ./netctl /usr/bin/
 kubectl apply -f $contiv_yaml
 if [ "$fwd_mode" = "routing" ]; then
   sleep 60
-  ./netctl --netmaster http://$netmaster:9999 global set --fwd-mode routing
+  netctl --netmaster http://$netmaster:9999 global set --fwd-mode routing
 else
   kubectl get deployment/kube-dns -n kube-system -o json  > kube-dns.yaml
   kubectl delete deployment/kube-dns -n kube-system
