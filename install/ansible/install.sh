@@ -95,13 +95,10 @@ echo "Verifying ansible reachability"
 ansible all $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' >& $inventory_log
 egrep 'FAIL|UNREACHABLE' $inventory_log >& /dev/null
 if [ $? -eq 0 ]; then
-   echo "WARNING"
    echo "WARNING Some of the hosts are not accessible via passwordless SSH"
-   echo "WARNING"
-   echo "`egrep 'FAIL|UNREACHABLE' $inventory_log`"
    echo " "
    echo "This means either the host is unreachable or passwordless SSH is not"
-   echo "set up for it. It is RECOMMENDED that you resolve this before proceeding."
+   echo "set up for it. Please resolve this before proceeding."
 
    exit 1
  fi
