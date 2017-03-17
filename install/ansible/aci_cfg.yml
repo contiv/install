@@ -1,6 +1,4 @@
-# This is the configuration for baremetal used for testing aci installer
-# XXX: for now we have one setup so hardcoding the details, we need to
-# revisit this when we add more aci test setups
+# This is an example configuration for the aci installation
 
 CONNECTION_INFO:
       contiv-aci-server4:
@@ -10,9 +8,12 @@ CONNECTION_INFO:
       contiv-aci-server5:
         control: enp3s0f1
         data: enp130s0f1
-APIC_URL: "https://contiv-aci-ifc1:443"
+APIC_URL: "https://contiv-aci-apic:443"
 APIC_USERNAME: "admin"
-APIC_PASSWORD: "ins3965!"
+APIC_PASSWORD: "password"
 APIC_LEAF_NODES:
     - topology/pod-1/node-101
     - topology/pod-1/node-102
+APIC_PHYS_DOMAIN: "TEST-Phys-Dom"
+APIC_EPG_BRIDGE_DOMAIN:  "not_specified"
+APIC_CONTRACTS_UNRESTRICTED_MODE: "no"
