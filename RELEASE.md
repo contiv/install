@@ -8,7 +8,7 @@ TBD
 	auth_proxy_version=${CONTIV_API_PROXY_VERSION:-"1.0.0-beta.3"}
 	aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
 	contiv_version=${CONTIV_VERSION:-"1.0.0-beta.3"}
-	etcd_version=${CONTIV_ETCD_VERSION:-2.3.7}
+	etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
 	docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
 	```
 
