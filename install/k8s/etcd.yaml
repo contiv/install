@@ -26,9 +26,24 @@ spec:
       hostNetwork: true
       containers:
         - name: contiv-etcd
-          image: gcr.io/google_containers/etcd:__ETCD_VERSION__
-          command: ["/bin/sh","-c"]
-          args: ["/usr/local/bin/etcd --name=contiv --data-dir=/var/etcd/contiv-data --advertise-client-urls=http://__NETMASTER_IP__:6666 --listen-client-urls=http://0.0.0.0:6666 --listen-peer-urls=http://0.0.0.0:6667"]
+          image: quay.io/coreos/etcd:__ETCD_VERSION__
+          args:
+            - --name
+            - contiv0
+            - --data-dir
+            - /var/etcd/contiv-data
+            - --initial-advertise-peer-urls
+            - http://__NETMASTER_IP__:6667
+            - --listen-peer-urls
+            - http://0.0.0.0:6667
+            - --listen-client-urls
+            - http://0.0.0.0:6666
+            - --advertise-client-urls
+            - http://__NETMASTER_IP__:6666
+            - --initial-cluster
+            - contiv0=http://__NETMASTER_IP__:6667
+            - --initial-cluster-state
+            - new  
           volumeMounts:
             - name: var-etcd
               mountPath: /var/etcd
