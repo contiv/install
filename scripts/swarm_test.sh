@@ -39,7 +39,7 @@ cd $install_version
 # Wait for CONTIV to start for up to 10 minutes
 sleep 10
 for i in {0..20}; do
-	response=$(curl -k -H -s "Content-Type: application/json" -X POST -d '{"username": "admin", "password": "admin"}' https://$contiv_master:10000/api/v1/auth_proxy/login || true)
+	response=$(curl -k -H -s "Content-Type: application/json" -X POST -d '{"username": "admin", "password": "admin"}' https://$contiv_master:10000/api/v1/auth_proxy/login/ || true)
 	if [[ $response == *"token"* ]]; then
 		echo "Install SUCCESS"
 		echo ""
