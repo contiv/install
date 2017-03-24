@@ -4,6 +4,8 @@
 #  BUILD_VERSION - new version being released
 #  GITHUB_USER - contiv
 #  GITHUB_TOKEN - your github token
+cd -P -- "$(dirname -- "$0")"
+
 if [ -z "$BUILD_VERSION" ]; then
 	echo "A release requires BUILD_VERSION to be defined""
 	exit 1
