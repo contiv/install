@@ -4,6 +4,11 @@
 #  BUILD_VERSION - new version being released
 #  GITHUB_USER - contiv
 #  GITHUB_TOKEN - your github token
+if [ -z "$BUILD_VERSION" ]; then
+	echo "A release requires BUILD_VERSION to be defined""
+	exit 1
+fi
+
 if [ -z "$OLD_VERSION" ]; then
 	echo "A release requires OLD_VERSION to be defined"
 	exit 1
