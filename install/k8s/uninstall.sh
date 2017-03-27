@@ -1,6 +1,10 @@
 #!/bin/bash
 
-set -euo pipefail
+
+if [ $EUID -ne 0 ]; then
+  echo "Please run this script as root user"
+  exit 1
+fi
 
 if [ "$#" -eq 1 ] && [ "$1" = "-h" ]; then
   echo "Usage: ./install/k8s/uninstall.sh to uninstall contiv"
@@ -9,7 +13,7 @@ if [ "$#" -eq 1 ] && [ "$1" = "-h" ]; then
 fi
 
 # Delete the ACI secret if it is available
-kubectl delete secret aci.key -n kube-system || true
+kubectl delete secret aci.key -n kube-system
 
 # Delete Contiv pods
 kubectl delete -f .contiv.yaml

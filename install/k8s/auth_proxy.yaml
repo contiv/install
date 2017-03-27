@@ -37,7 +37,6 @@ spec:
             - --tls-certificate=/var/contiv/auth_proxy_cert.pem
             - --data-store-address=$(CONTIV_ETCD)
             - --netmaster-address=__NETMASTER_IP__:9999
-            - --listen-address=__NETMASTER_IP__:10000
           env:
             - name: NO_NETMASTER_STARTUP_CHECK
               value: "1"

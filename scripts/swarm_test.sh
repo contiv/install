@@ -32,14 +32,14 @@ if [ ! -f "${install_version}.tgz" ]; then
 	curl -L -O https://github.com/contiv/install/releases/download/${BUILD_VERSION}/${install_version}.tgz
 fi
 
-tar xf $install_version.tgz
+tar oxf $install_version.tgz
 cd $install_version
 ./install/ansible/install_swarm.sh -f ../../cluster/.cfg.yml -e $ssh_key -u $user -i
 
 # Wait for CONTIV to start for up to 10 minutes
 sleep 10
 for i in {0..20}; do
-	response=$(curl -k -H -s "Content-Type: application/json" -X POST -d '{"username": "admin", "password": "admin"}' https://$contiv_master:10000/api/v1/auth_proxy/login/ || true)
+	response=$(curl -k -s -H "Content-Type: application/json" -X POST -d '{"username": "admin", "password": "admin"}' https://$contiv_master:10000/api/v1/auth_proxy/login/ || true)
 	if [[ $response == *"token"* ]]; then
 		echo "Install SUCCESS"
 		echo ""
