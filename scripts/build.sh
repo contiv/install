@@ -2,6 +2,14 @@
 
 set -euo pipefail
 
+# ensure this script wasn't called from the directory where this script
+# lives; it should be called from the repository's top level
+script_dir="$(dirname -- "$0")"
+if [ "$script_dir" == "." ]; then
+	echo "This script must be called from the top level of the repository"
+	exit 1
+fi
+
 DEV_IMAGE_NAME="devbuild"
 IMAGE_NAME="contiv/auth_proxy"
 VERSION=${BUILD_VERSION-$DEV_IMAGE_NAME}
