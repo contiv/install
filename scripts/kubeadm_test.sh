@@ -41,7 +41,7 @@ fi
 set +e # read returns 1 when it succeeds
 read -r -d '' COMMANDS <<-EOF
     sudo rm -rf ${install_version} && \\
-    ${curl_cmd} && tar xf ${install_version}.tgz && \\
+    ${curl_cmd} && tar oxf ${install_version}.tgz && \\
     cd ${install_version} && \\
     sudo ./install/k8s/install.sh -n ${contiv_master}
 EOF
@@ -53,7 +53,7 @@ CONTIV_KUBEADM=1 vagrant ssh contiv-node1 -- "$COMMANDS"
 set +e
 read -r -d '' SETUP_DEFAULT_NET <<-EOF
     cd ${install_version} && \\
-    sudo netctl net create -s ${default_net_cidr} default-net
+    netctl net create -s ${default_net_cidr} default-net
 EOF
 set -e
 
@@ -61,7 +61,7 @@ echo "*****************"
 # Wait for CONTIV to start for up to 10 minutes
 sleep 10
 for i in {0..20}; do
-	response=$(curl -k -H -s "Content-Type: application/json" -X POST -d '{"username": "admin", "password": "admin"}' https://$contiv_master:10000/api/v1/auth_proxy/login/ || true)
+	response=$(curl -k -s -H "Content-Type: application/json" -X POST -d '{"username": "admin", "password": "admin"}' https://$contiv_master:10000/api/v1/auth_proxy/login/ || true)
 	if [[ $response == *"token"* ]]; then
 		echo "Install SUCCESS"
 		echo ""

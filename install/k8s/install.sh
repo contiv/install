@@ -3,6 +3,11 @@
 
 set -euo pipefail
 
+if [ $EUID -ne 0 ]; then
+  echo "Please run this script as root user"
+  exit 1
+fi
+
 #
 # The following parameters are user defined - and vary for each installation
 #
@@ -235,7 +240,7 @@ else
 fi
 
 echo "Applying contiv installation"
-echo "$netmaster netmaster" >> /etc/hosts
+grep -q -F "netmaster" /etc/hosts || echo "$netmaster netmaster" >> /etc/hosts
 echo "To customize the installation press Ctrl+C and edit $contiv_yaml."
 sleep 5
 chmod +x ./netctl
@@ -246,10 +251,10 @@ kubectl apply -f $contiv_yaml
 if [ "$fwd_mode" = "routing" ]; then
   sleep 60
   netctl --netmaster http://$netmaster:9999 global set --fwd-mode routing
-else
-  kubectl get deployment/kube-dns -n kube-system -o json  > kube-dns.yaml
-  kubectl delete deployment/kube-dns -n kube-system
 fi
+
+kubectl get deployment/kube-dns -n kube-system -o json  > kube-dns.yaml
+kubectl delete deployment/kube-dns -n kube-system
 
 echo "Installation is complete"
 echo "========================================================="

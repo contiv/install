@@ -76,7 +76,7 @@ chmod +x $output_dir/install/generate-certificate.sh
 # This is maybe optional - but assume we need it for
 curl -sSL https://github.com/contiv/netplugin/releases/download/$contiv_version/netplugin-$contiv_version.tar.bz2 -o $output_dir/netplugin-$contiv_version.tar.bz2
 pushd $output_dir
-tar xf netplugin-$contiv_version.tar.bz2 netctl
+tar oxf netplugin-$contiv_version.tar.bz2 netctl
 rm -f netplugin-$contiv_version.tar.bz2
 git clone http://github.com/contiv/ansible
 popd
