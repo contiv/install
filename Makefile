@@ -1,6 +1,7 @@
 # this is the classic first makefile target, and it's also the default target
 # run when `make` is invoked with no specific target.
 all: build
+rel_ver = $(shell python ./scripts/get_latest_release.py)
 
 # build creates a release package for contiv.
 # It uses a pre-built image specified by BUILD_VERSION.
@@ -28,8 +29,8 @@ cluster-destroy:
 # export BUILD_VERSION=1.0.0-beta.3
 # Or run make as BUILD_VERSION=1.0.0-beta.3 make demo-k8s
 demo-k8s:
-	CONTIV_KUBEADM=1 make cluster
-	CONTIV_KUBEADM=1 make install-test-kubeadm
+	BUILD_VERSION=$(rel_ver) CONTIV_KUBEADM=1 make cluster
+	BUILD_VERSION=$(rel_ver) CONTIV_KUBEADM=1 make install-test-kubeadm
 
 # demo-swarm brings up a cluster with docker swarm, runs the installer on it, and shows the URL
 # of the demo Contiv Admin Console which was set up
@@ -37,8 +38,8 @@ demo-k8s:
 # export BUILD_VERSION=1.0.0-beta.3
 # Or run make as BUILD_VERSION=1.0.0-beta.3 make demo-k8s
 demo-swarm:
-	make cluster
-	make install-test-swarm
+	BUILD_VERSION=$(rel_ver) make cluster
+	BUILD_VERSION=$(rel_ver) make install-test-swarm
 
 # Create a build and test the release installation on a vagrant cluster
 # TODO: The vagrant part of this can be optimized by taking snapshots instead
