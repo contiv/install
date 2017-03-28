@@ -102,7 +102,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       elsif node_os == UBUNTU
         c.vm.box = 'ubuntu/xenial64'
       else
-        c.vm.box = 'centos/7'
+        if ENV['CONTIV_KUBEADM']
+           c.vm.box = 'contiv/kubeadm-centos'
+        else
+           c.vm.box = 'centos/7'
+        end
         config.ssh.insert_key = false
       end
       c.vm.provision 'shell' do |s|
