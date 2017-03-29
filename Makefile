@@ -1,7 +1,7 @@
 # this is the classic first makefile target, and it's also the default target
 # run when `make` is invoked with no specific target.
 all: build
-rel_ver = $(shell python ./scripts/get_latest_release.py)
+rel_ver = $(shell ./scripts/get_latest_release.sh)
 
 # build creates a release package for contiv.
 # It uses a pre-built image specified by BUILD_VERSION.

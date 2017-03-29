@@ -5,7 +5,7 @@
 
 # Ansible options. By default, this specifies a private key to be used and the vagrant user
 ans_opts=""
-ans_user="vagrant"
+ans_user="root"
 ans_key=$src_conf_path/insecure_private_key
 uninstall_scheduler=""
 reset_params=""
@@ -16,6 +16,7 @@ if ! docker version > /dev/null 2>&1; then
   echo "docker not found. Please retry after installing docker."
   exit 1
 fi
+
 usage() {
   cat << EOF
 Uninstaller:
@@ -49,7 +50,7 @@ Examples:
 ./install/ansible/uninstall_swarm.sh -f cfg.yml -e ~/ssh_key -u admin -i -m aci -r
 
 EOF
-  exit 1
+exit 1
 }
 
 # Create the config folder to be shared with the install container.
@@ -142,4 +143,4 @@ ansible_mount="-v $(pwd)/ansible:/ansible:Z"
 config_mount="-v $src_conf_path:$container_conf_path:Z"
 cache_mount="-v $(pwd)/contiv_cache:/var/contiv_cache:Z"
 mounts="$install_mount $ansible_mount $cache_mount $config_mount"
-docker run --rm $mounts $image_name sh -c "./install/ansible/uninstall.sh $netmaster_param -a \"$ans_opts\" $uninstall_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param $reset_params $cluster_param"
+docker run --rm --net=host $mounts $image_name sh -c "./install/ansible/uninstall.sh $netmaster_param -a \"$ans_opts\" $uninstall_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param $reset_params $cluster_param"
