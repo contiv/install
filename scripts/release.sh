@@ -7,7 +7,7 @@
 cd -P -- "$(dirname -- "$0")"
 
 if [ -z "$BUILD_VERSION" ]; then
-	echo "A release requires BUILD_VERSION to be defined""
+	echo "A release requires BUILD_VERSION to be defined"
 	exit 1
 fi
 
