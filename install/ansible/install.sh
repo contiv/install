@@ -56,7 +56,7 @@ while getopts ":n:a:im:d:v:s:" opt; do
 			;;
 		s)
 			cluster_store=$OPTARG
-      install_etcd=false
+			install_etcd=false
 			;;
 		:)
 			echo "An argument required for $OPTARG was not passed"
@@ -69,7 +69,7 @@ while getopts ":n:a:im:d:v:s:" opt; do
 done
 
 echo "Generating Ansible configuration"
-inventory="/var/contiv/.gen"
+inventory="/.gen"
 inventory_log="/var/contiv/host_inventory.log"
 mkdir -p "$inventory"
 host_inventory="$inventory/contiv_hosts"
@@ -92,16 +92,16 @@ env_file=install/ansible/env.json
 # Verify ansible can reach all hosts
 
 echo "Verifying ansible reachability"
-ansible all $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' >& $inventory_log
-egrep 'FAIL|UNREACHABLE' $inventory_log >& /dev/null
+ansible all $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' >&$inventory_log
+egrep 'FAIL|UNREACHABLE' $inventory_log >&/dev/null
 if [ $? -eq 0 ]; then
-   echo "WARNING Some of the hosts are not accessible via passwordless SSH"
-   echo " "
-   echo "This means either the host is unreachable or passwordless SSH is not"
-   echo "set up for it. Please resolve this before proceeding."
+	echo "WARNING Some of the hosts are not accessible via passwordless SSH"
+	echo " "
+	echo "This means either the host is unreachable or passwordless SSH is not"
+	echo "set up for it. Please resolve this before proceeding."
 
-   exit 1
- fi
+	exit 1
+fi
 
 # Get the netmaster control interface
 netmaster_control_if=$(grep -A10 $netmaster $contiv_config | grep -m 1 control | awk -F ":" '{print $2}' | xargs)
@@ -159,6 +159,9 @@ rm -rf "$env_file.bak*"
 
 unreachable=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "unreachable=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
 failed=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "failed=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
+chmod 666 $inventory_log
+chmod 666 $env_file
+chmod 666 $log_file
 
 if [ "$unreachable" = "" ] && [ "$failed" = "" ]; then
 	echo "Installation is complete"
