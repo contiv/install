@@ -3,6 +3,7 @@
 # Check if the user requested a specific build
 if [[ "$BUILD_VERSION" != "" ]]; then
 	echo $BUILD_VERSION
+	exit 0
 fi
 
 # Try to get the latest release
