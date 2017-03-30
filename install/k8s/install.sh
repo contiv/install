@@ -8,6 +8,14 @@ if [ $EUID -ne 0 ]; then
   exit 1
 fi
 
+kubectl="kubectl --kubeconfig /etc/kubernetes/admin.conf"
+k8sversion=$($kubectl version --short | grep "Server Version")
+if [[ "$k8sversion" == *"v1.4"* ]] || [[ "$k8sversion" == *"v1.5"* ]]; then
+  k8sfolder="k8s1.4"
+else
+  k8sfolder="k8s1.6"
+fi
+
 #
 # The following parameters are user defined - and vary for each installation
 #
@@ -80,8 +88,8 @@ Advanced Usage:
 This installer creates a Kubernetes application specification in a file named .contiv.yaml.
 For further customization, you can edit this file manually and run the following to re-install Contiv.
 
-kubectl delete -f .contiv.yaml
-kubectl apply -f .contiv.yaml (This .contiv.yaml contains the new changes.)
+$kubectl delete -f .contiv.yaml
+$kubectl apply -f .contiv.yaml (This .contiv.yaml contains the new changes.)
 
 EOF
   exit 1
@@ -176,18 +184,15 @@ contiv_yaml="./.contiv.yaml"
 rm -f $contiv_yaml
 
 # Create the new config file from the templates
-contiv_config_yaml_template="./install/k8s/contiv_config.yaml"
-contiv_yaml_template="./install/k8s/contiv.yaml"
-contiv_etcd_template="./install/k8s/etcd.yaml"
-contiv_auth_proxy_template="./install/k8s/auth_proxy.yaml"
-contiv_aci_gw_template="./install/k8s/aci_gw.yaml"
+contiv_yaml_template="./install/k8s/$k8sfolder/contiv.yaml"
+contiv_etcd_template="./install/k8s/$k8sfolder/etcd.yaml"
+contiv_aci_gw_template="./install/k8s/$k8sfolder/aci_gw.yaml"
 
-cat $contiv_config_yaml_template >> $contiv_yaml
+cat $contiv_yaml_template >> $contiv_yaml
+
 if [ "$cluster_store" = "" ]; then
   cat $contiv_etcd_template >> $contiv_yaml
 fi
-
-cat $contiv_yaml_template >> $contiv_yaml
 
 if [ "$apic_url" != "" ]; then
   cat $contiv_aci_gw_template >> $contiv_yaml
@@ -203,9 +208,7 @@ else
   aci_key=./aci.key
 fi
 
-kubectl create secret generic aci.key --from-file=$aci_key -n kube-system
-
-cat $contiv_auth_proxy_template >> $contiv_yaml
+$kubectl create secret generic aci.key --from-file=$aci_key -n kube-system
 
 if [ "$tls_cert" = "" ]; then
   echo "Generating local certs for Contiv Proxy"
@@ -247,14 +250,14 @@ chmod +x ./netctl
 rm -f /usr/bin/netctl
 cp ./netctl /usr/bin/
 # Install Contiv
-kubectl apply -f $contiv_yaml
+$kubectl apply -f $contiv_yaml
 if [ "$fwd_mode" = "routing" ]; then
   sleep 60
   netctl --netmaster http://$netmaster:9999 global set --fwd-mode routing
 fi
 
-kubectl get deployment/kube-dns -n kube-system -o json  > kube-dns.yaml
-kubectl delete deployment/kube-dns -n kube-system
+$kubectl get deployment/kube-dns -n kube-system -o json  > kube-dns.yaml
+$kubectl delete deployment/kube-dns -n kube-system
 
 echo "Installation is complete"
 echo "========================================================="

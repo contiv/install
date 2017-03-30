@@ -90,43 +90,21 @@ git clone http://github.com/contiv/ansible
 popd
 
 # Replace versions
-ansible_yaml_dir=$output_dir/install/ansible/
-ansible_env=$ansible_yaml_dir/env.json
+sed -i.bak "s/__ACI_GW_VERSION__/$aci_gw_version/g" $(find $output_dir -type f -name "*.yaml" -or -name "*.sh")
+sed -i.bak "s/__API_PROXY_VERSION__/$auth_proxy_version/g" $(find $output_dir -type f -name "*.yaml" -or -name "*.sh")
+sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$ansible_image_version/g" $(find $output_dir -type f -name "*.yaml" -or -name "*.sh")
+sed -i.bak "s/__CONTIV_VERSION__/$contiv_version/g" $(find $output_dir -type f -name "*.yaml" -or -name "*.sh")
+sed -i.bak "s/__DOCKER_VERSION__/$docker_version/g" $(find $output_dir -type f -name "*.yaml" -or -name "*.sh")
+sed -i.bak "s/__ETCD_VERSION__/$etcd_version/g" $(find $output_dir -type f -name "*.yaml" -or -name "*.sh")
 
-k8s_yaml_dir=$output_dir/install/k8s/
-contiv_yaml=$k8s_yaml_dir/contiv.yaml
-cleanup_yaml=$k8s_yaml_dir/cleanup.yaml
-aci_gw_yaml=$k8s_yaml_dir/aci_gw.yaml
-auth_proxy_yaml=$k8s_yaml_dir/auth_proxy.yaml
-etcd_yaml=$k8s_yaml_dir/etcd.yaml
+# Make all shell script files executable
+chmod +x $(find $output_dir -type f -name "*.sh")
 
-sed -i.bak "s/__CONTIV_VERSION__/$contiv_version/g" $contiv_yaml
-sed -i.bak "s/__CONTIV_VERSION__/$contiv_version/g" $cleanup_yaml
-sed -i.bak "s/__API_PROXY_VERSION__/$auth_proxy_version/g" $auth_proxy_yaml
-sed -i.bak "s/__ACI_GW_VERSION__/$aci_gw_version/g" $aci_gw_yaml
-sed -i.bak "s/__ETCD_VERSION__/$etcd_version/g" $etcd_yaml
-
-sed -i.bak "s/__DOCKER_VERSION__/$docker_version/g" $ansible_env
-sed -i.bak "s/__CONTIV_VERSION__/$contiv_version/g" $ansible_env
-sed -i.bak "s/__ACI_GW_VERSION__/$aci_gw_version/g" $ansible_env
-sed -i.bak "s/__API_PROXY_VERSION__/$auth_proxy_version/g" $ansible_env
-sed -i.bak "s/__ETCD_VERSION__/$etcd_version/g" $ansible_env
-
-chmod +x $k8s_yaml_dir/install.sh
-chmod +x $k8s_yaml_dir/uninstall.sh
-sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$ansible_image_version/g" $ansible_yaml_dir/install_swarm.sh
-sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$ansible_image_version/g" $ansible_yaml_dir/uninstall_swarm.sh
-chmod +x $ansible_yaml_dir/install_swarm.sh
-chmod +x $ansible_yaml_dir/uninstall_swarm.sh
-chmod +x $output_dir/install/ansible/install.sh
-chmod +x $output_dir/install/ansible/uninstall.sh
 # Cleanup the backup files
-rm -f $k8s_yaml_dir/*.bak
-rm -f $ansible_yaml_dir/*.bak
-
 rm -rf $output_dir/scripts
+rm -rf $(find $output_dir -type f -name "*.bak")
 
-# Clean up the Dockerfiles, they are not part of the release bits.
+# Clean up the Dockerfile, it is not part of the release bits.
 rm -f $output_dir/install/ansible/Dockerfile
 
 # Create the binary cache folder
