@@ -112,7 +112,7 @@ binary_cache=$output_dir/contiv_cache
 mkdir -p $binary_cache
 
 # Create the minimal tar bundle
-tar czf $tmp_output_file -C $release_dir .
+tar czf $tmp_output_file -C $release_dir contiv-$VERSION
 
 # Save the auth proxy & aci-gw images for packaging the full docker images with contiv install binaries
 if [ "$(docker images -q contiv/auth_proxy:$auth_proxy_version 2>/dev/null)" == "" ]; then
@@ -134,7 +134,7 @@ sed -i.bak "s#.*auth_proxy_local_install.*#  \"auth_proxy_local_install\": True,
 sed -i.bak "s#.*contiv_network_local_install.*#  \"contiv_network_local_install\": True#g" $env_file
 
 # Create the full tar bundle
-tar czf $tmp_full_output_file -C $release_dir .
+tar czf $tmp_full_output_file -C $release_dir contiv-$VERSION
 
 mv $tmp_output_file $output_file
 mv $tmp_full_output_file $full_output_file
