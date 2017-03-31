@@ -7,11 +7,11 @@ contiv_master=$(grep -B 3 master cluster/.cfg.yml | grep -oE "\b([0-9]{1,3}\.){3
 node_os=${CONTIV_NODE_OS:-"centos"}
 # Default user is vagrant for non-ubuntu and ubuntu for ubuntu boxes.
 if [ "$node_os" == "ubuntu" ]; then
-  def_user="ubuntu"
-  def_key="$HOME/.ssh/id_rsa"
+	def_user="ubuntu"
+	def_key="$HOME/.ssh/id_rsa"
 else
-  def_user="vagrant"
-  def_key=""
+	def_user="vagrant"
+	def_key=""
 fi
 user=${CONTIV_SSH_USER:-"$def_user"}
 
@@ -22,7 +22,7 @@ default_net_cidr="${DEFAULT_NET:-20.1.1.0/24}"
 # For local builds, copy the build binaries to the vagrant node, using the vagrant ssh-key
 if [ -f "release/${install_version}.tgz" ]; then
 	pushd cluster
-    ssh_key=${CONTIV_SSH_KEY:-"$def_key"}
+	ssh_key=${CONTIV_SSH_KEY:-"$def_key"}
 	if [ "$ssh_key" == "" ]; then
 		ssh_key=$(CONTIV_KUBEADM=1 vagrant ssh-config contiv-node1 | grep IdentityFile | awk '{print $2}' | xargs)
 	fi
