@@ -4,16 +4,16 @@
 set -euo pipefail
 
 if [ $EUID -ne 0 ]; then
-  echo "Please run this script as root user"
-  exit 1
+	echo "Please run this script as root user"
+	exit 1
 fi
 
 kubectl="kubectl --kubeconfig /etc/kubernetes/admin.conf"
 k8sversion=$($kubectl version --short | grep "Server Version")
 if [[ "$k8sversion" == *"v1.4"* ]] || [[ "$k8sversion" == *"v1.5"* ]]; then
-  k8sfolder="k8s1.4"
+	k8sfolder="k8s1.4"
 else
-  k8sfolder="k8s1.6"
+	k8sfolder="k8s1.6"
 fi
 
 #
@@ -48,8 +48,8 @@ aci_key=""
 apic_cert_dn=""
 
 usage() {
-  echo "Usage:"
-  cat << EOF
+	echo "Usage:"
+	cat <<EOF
 Contiv Installer for Kubeadm based setups.
 
 Installer:
@@ -92,90 +92,90 @@ $kubectl delete -f .contiv.yaml
 $kubectl apply -f .contiv.yaml (This .contiv.yaml contains the new changes.)
 
 EOF
-  exit 1
+	exit 1
 }
 
 error_ret() {
-  echo ""
-  echo "$1"
-  exit 1
+	echo ""
+	echo "$1"
+	exit 1
 }
 
 while getopts ":s:n:v:w:c:t:k:a:u:p:l:d:e:m:y:z:" opt; do
-    case $opt in
-       s)
-          cluster_store=$OPTARG
-          ;;
-       n)
-          netmaster=$OPTARG
-          ;;
-       v)
-          vlan_if=$OPTARG
-          ;;
-       w)
-          fwd_mode=$OPTARG
-          ;;
-       c)
-          contiv_config=$OPTARG
-          ;;
-       t)
-          tls_cert=$OPTARG
-          ;;
-       k)
-          tls_key=$OPTARG
-          ;;
-       a)
-          apic_url=$OPTARG
-          ;;
-       u)
-          apic_username=$OPTARG
-          ;;
-       p)
-          apic_password=$OPTARG
-          ;;
-       l)
-          apic_leaf_node=$OPTARG
-          ;;
-       d)
-          apic_phys_domain=$OPTARG
-          ;;
-       e)
-          apic_epg_bridge_domain=$OPTARG
-          ;;
-       m)
-          apic_contracts_unrestricted_mode=$OPTARG
-          ;;
-       y)
-          aci_key=$OPTARG
-          ;;
-       z)
-          apic_cert_dn=$OPTARG
-          ;;
-       :)
-          echo "An argument required for $OPTARG was not passed"
-          usage
-          ;;
-       ?)
-          usage
-          ;;
-     esac
+	case $opt in
+		s)
+			cluster_store=$OPTARG
+			;;
+		n)
+			netmaster=$OPTARG
+			;;
+		v)
+			vlan_if=$OPTARG
+			;;
+		w)
+			fwd_mode=$OPTARG
+			;;
+		c)
+			contiv_config=$OPTARG
+			;;
+		t)
+			tls_cert=$OPTARG
+			;;
+		k)
+			tls_key=$OPTARG
+			;;
+		a)
+			apic_url=$OPTARG
+			;;
+		u)
+			apic_username=$OPTARG
+			;;
+		p)
+			apic_password=$OPTARG
+			;;
+		l)
+			apic_leaf_node=$OPTARG
+			;;
+		d)
+			apic_phys_domain=$OPTARG
+			;;
+		e)
+			apic_epg_bridge_domain=$OPTARG
+			;;
+		m)
+			apic_contracts_unrestricted_mode=$OPTARG
+			;;
+		y)
+			aci_key=$OPTARG
+			;;
+		z)
+			apic_cert_dn=$OPTARG
+			;;
+		:)
+			echo "An argument required for $OPTARG was not passed"
+			usage
+			;;
+		?)
+			usage
+			;;
+	esac
 done
 
 if [ "$netmaster" = "" ]; then
-  usage
+	usage
 fi
 
-if [[ "$apic_url" != "" && "$apic_password" = "" && "$aci_key" = "" ]]; then
-  read -s -p "Enter the APIC password: ", apic_password
-  if [ "$apic_password" = "" ]; then
-    usage
-  fi
+if [[ "$apic_url" != "" && "$apic_password" == "" && "$aci_key" == "" ]]; then
+	read -s -p "Enter the APIC password: ", apic_password
+	if [ "$apic_password" = "" ]; then
+		usage
+	fi
 fi
 
 if [[ "$apic_url" != "" ]]; then
-  if [[ "$apic_username" = "" || "$apic_phys_domain" = "" || "$apic_leaf_node" = "" ]]; then
-    usage
-  fi
+	if [[ "$apic_username" == "" || "$apic_phys_domain" == "" || "$apic_leaf_node" == "" ]]; then
+		usage
+	fi
 fi
 
 echo "Installing Contiv for Kubernetes"
@@ -188,37 +188,37 @@ contiv_yaml_template="./install/k8s/$k8sfolder/contiv.yaml"
 contiv_etcd_template="./install/k8s/$k8sfolder/etcd.yaml"
 contiv_aci_gw_template="./install/k8s/$k8sfolder/aci_gw.yaml"
 
-cat $contiv_yaml_template >> $contiv_yaml
+cat $contiv_yaml_template >>$contiv_yaml
 
 if [ "$cluster_store" = "" ]; then
-  cat $contiv_etcd_template >> $contiv_yaml
+	cat $contiv_etcd_template >>$contiv_yaml
 fi
 
 if [ "$apic_url" != "" ]; then
-  cat $contiv_aci_gw_template >> $contiv_yaml
+	cat $contiv_aci_gw_template >>$contiv_yaml
 fi
 
 # We will store the ACI key in a k8s secret.
 # The name of the file should be aci.key
-if [ "$aci_key" = ""  ]; then
-  aci_key=./aci.key
-  echo "dummy" > $aci_key
+if [ "$aci_key" = "" ]; then
+	aci_key=./aci.key
+	echo "dummy" >$aci_key
 else
-  cp $aci_key ./aci.key
-  aci_key=./aci.key
+	cp $aci_key ./aci.key
+	aci_key=./aci.key
 fi
 
 $kubectl create secret generic aci.key --from-file=$aci_key -n kube-system
 
 if [ "$tls_cert" = "" ]; then
-  echo "Generating local certs for Contiv Proxy"
-  mkdir -p /var/contiv
-  mkdir -p ./local_certs
-  
-  chmod +x ./install/generate-certificate.sh
-  ./install/generate-certificate.sh
-  tls_cert=./local_certs/cert.pem
-  tls_key=./local_certs/local.key
+	echo "Generating local certs for Contiv Proxy"
+	mkdir -p /var/contiv
+	mkdir -p ./local_certs
+
+	chmod +x ./install/generate-certificate.sh
+	./install/generate-certificate.sh
+	tls_cert=./local_certs/cert.pem
+	tls_key=./local_certs/local.key
 fi
 cp $tls_cert /var/contiv/auth_proxy_cert.pem
 cp $tls_key /var/contiv/auth_proxy_key.pem
@@ -228,22 +228,22 @@ sed -i.bak "s/__NETMASTER_IP__/$netmaster/g" $contiv_yaml
 sed -i.bak "s/__VLAN_IF__/$vlan_if/g" $contiv_yaml
 
 if [ "$apic_url" != "" ]; then
-  sed -i.bak "s#__APIC_URL__#$apic_url#g" $contiv_yaml
-  sed -i.bak "s/__APIC_USERNAME__/$apic_username/g" $contiv_yaml
-  sed -i.bak "s/__APIC_PASSWORD__/$apic_password/g" $contiv_yaml
-  sed -i.bak "s#__APIC_LEAF_NODE__#$apic_leaf_node#g" $contiv_yaml
-  sed -i.bak "s/__APIC_PHYS_DOMAIN__/$apic_phys_domain/g" $contiv_yaml
-  sed -i.bak "s/__APIC_EPG_BRIDGE_DOMAIN__/$apic_epg_bridge_domain/g" $contiv_yaml
-  sed -i.bak "s/__APIC_CONTRACTS_UNRESTRICTED_MODE__/$apic_contracts_unrestricted_mode/g" $contiv_yaml
+	sed -i.bak "s#__APIC_URL__#$apic_url#g" $contiv_yaml
+	sed -i.bak "s/__APIC_USERNAME__/$apic_username/g" $contiv_yaml
+	sed -i.bak "s/__APIC_PASSWORD__/$apic_password/g" $contiv_yaml
+	sed -i.bak "s#__APIC_LEAF_NODE__#$apic_leaf_node#g" $contiv_yaml
+	sed -i.bak "s/__APIC_PHYS_DOMAIN__/$apic_phys_domain/g" $contiv_yaml
+	sed -i.bak "s/__APIC_EPG_BRIDGE_DOMAIN__/$apic_epg_bridge_domain/g" $contiv_yaml
+	sed -i.bak "s/__APIC_CONTRACTS_UNRESTRICTED_MODE__/$apic_contracts_unrestricted_mode/g" $contiv_yaml
 fi
 if [ "$apic_cert_dn" = "" ]; then
-  sed -i.bak "/APIC_CERT_DN/d" $contiv_yaml
+	sed -i.bak "/APIC_CERT_DN/d" $contiv_yaml
 else
-  sed -i.bak "s#__APIC_CERT_DN__#$apic_cert_dn#g" $contiv_yaml
+	sed -i.bak "s#__APIC_CERT_DN__#$apic_cert_dn#g" $contiv_yaml
 fi
 
 echo "Applying contiv installation"
-grep -q -F "netmaster" /etc/hosts || echo "$netmaster netmaster" >> /etc/hosts
+grep -q -F "netmaster" /etc/hosts || echo "$netmaster netmaster" >>/etc/hosts
 echo "To customize the installation press Ctrl+C and edit $contiv_yaml."
 sleep 5
 chmod +x ./netctl
@@ -252,11 +252,11 @@ cp ./netctl /usr/bin/
 # Install Contiv
 $kubectl apply -f $contiv_yaml
 if [ "$fwd_mode" = "routing" ]; then
-  sleep 60
-  netctl --netmaster http://$netmaster:9999 global set --fwd-mode routing
+	sleep 60
+	netctl --netmaster http://$netmaster:9999 global set --fwd-mode routing
 fi
 
-$kubectl get deployment/kube-dns -n kube-system -o json  > kube-dns.yaml
+$kubectl get deployment/kube-dns -n kube-system -o json >kube-dns.yaml
 $kubectl delete deployment/kube-dns -n kube-system
 
 echo "Installation is complete"

@@ -3,11 +3,11 @@
 set -euo pipefail
 
 if [ $EUID -ne 0 ]; then
-  echo "Please run this script as root user"   
-  exit 1
+	echo "Please run this script as root user"
+	exit 1
 fi
 
-cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+cat <<EOF >/etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
 baseurl=http://yum.kubernetes.io/repos/kubernetes-el7-x86_64

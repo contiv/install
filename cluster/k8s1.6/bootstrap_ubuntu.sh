@@ -3,13 +3,13 @@
 set -euo pipefail
 
 if [ $EUID -ne 0 ]; then
-  echo "Please run this script as root user"   
-  exit 1
+	echo "Please run this script as root user"
+	exit 1
 fi
 
 apt-get update && apt-get install -y apt-transport-https
 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-cat <<EOF > /etc/apt/sources.list.d/kubernetes.list
+cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
 deb http://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 apt-get update
@@ -28,4 +28,3 @@ fi
 if systemctl -q is-enabled firewalld; then
 	systemctl disable firewalld
 fi
-

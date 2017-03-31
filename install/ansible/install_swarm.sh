@@ -12,13 +12,13 @@ install_scheduler=""
 
 # Check for docker
 
-if ! docker version > /dev/null 2>&1; then
-  echo "docker not found. Please retry after installing docker."
-  exit 1
+if ! docker version >/dev/null 2>&1; then
+	echo "docker not found. Please retry after installing docker."
+	exit 1
 fi
 
 usage() {
-  cat << EOF
+	cat <<EOF
 Contiv Installer for Docker/Swarm based setups.
 
 Installer:
@@ -57,98 +57,97 @@ Examples:
 ./install/ansible/install_swarm.sh -f cfg.yml -e ~/ssh_key -u admin -i -m aci -d routing
 
 EOF
-  exit 1
+	exit 1
 }
 
 # Create the config folder to be shared with the install container.
 mkdir -p "$src_conf_path"
 cluster_param=""
 while getopts ":f:n:a:e:im:d:v:u:c:k:s:" opt; do
-  case $opt in
-    f)
-      cp "$OPTARG" "$host_contiv_config"
-      ;;
-    n)
-      netmaster=$OPTARG
-      ;;
-    a)
-      ans_opts=$OPTARG
-      ;;
-    e)
-      ans_key=$OPTARG
-      ;;
-    u)
-      ans_user=$OPTARG
-      ;;
-    m)
-      contiv_network_mode=$OPTARG
-      ;;
-    d)
-      fwd_mode=$OPTARG
-      ;;
-    v)
-      aci_image=$OPTARG
-      ;;
-    s)
-      cluster_param="-s $OPTARG"
-      ;;
+	case $opt in
+		f)
+			cp "$OPTARG" "$host_contiv_config"
+			;;
+		n)
+			netmaster=$OPTARG
+			;;
+		a)
+			ans_opts=$OPTARG
+			;;
+		e)
+			ans_key=$OPTARG
+			;;
+		u)
+			ans_user=$OPTARG
+			;;
+		m)
+			contiv_network_mode=$OPTARG
+			;;
+		d)
+			fwd_mode=$OPTARG
+			;;
+		v)
+			aci_image=$OPTARG
+			;;
+		s)
+			cluster_param="-s $OPTARG"
+			;;
 
-    i) 
-      install_scheduler="-i"
-      ;;
-    c)
-      cp "$OPTARG" "$host_tls_cert"
-      ;;
-    k)
-      cp "$OPTARG" "$host_tls_key"
-      ;;
-    :)
-      echo "An argument required for $OPTARG was not passed"
-      usage
-      ;;
-    ?)
-      usage
-      ;;
-  esac
+		i)
+			install_scheduler="-i"
+			;;
+		c)
+			cp "$OPTARG" "$host_tls_cert"
+			;;
+		k)
+			cp "$OPTARG" "$host_tls_key"
+			;;
+		:)
+			echo "An argument required for $OPTARG was not passed"
+			usage
+			;;
+		?)
+			usage
+			;;
+	esac
 done
 
 if [[ ! -f $host_contiv_config ]]; then
 	echo "Host configuration file missing"
-  usage
+	usage
 fi
 
-if [ "$netmaster" != ""  ]; then
-  netmaster_param="-n $netmaster"
+if [ "$netmaster" != "" ]; then
+	netmaster_param="-n $netmaster"
 else
-  netmaster_param=""
+	netmaster_param=""
 fi
 
-if [ "$aci_image" != "" ];then
-  aci_param="-v $aci_image"
+if [ "$aci_image" != "" ]; then
+	aci_param="-v $aci_image"
 else
-  aci_param=""
+	aci_param=""
 fi
 
 # Copy the key to config folder
 if [[ -f $ans_key ]]; then
-  cp "$ans_key" "$host_ans_key"
+	cp "$ans_key" "$host_ans_key"
 fi
 
 if [ "$ans_opts" == "" ]; then
-  ans_opts=" --private-key $def_ans_key -u $ans_user"
+	ans_opts=" --private-key $def_ans_key -u $ans_user"
 else
-  ans_opts=$(printf '%q', $ans_opts)" --private-key $def_ans_key -u $ans_user"
+	ans_opts=$(printf '%q', $ans_opts)" --private-key $def_ans_key -u $ans_user"
 fi
-
 
 # Generate SSL certs for auth proxy
 if [[ ! -f "$host_tls_cert" || ! -f "$host_tls_key" ]]; then
-  echo "Generating local certs for Contiv Proxy"
-  openssl genrsa -out "$host_tls_key" 2048 >/dev/null 2>&1
-  openssl req -new -x509 -sha256 -days 3650 \
-      -key "$host_tls_key" \
-      -out "$host_tls_cert" \
-      -subj "/C=US/ST=CA/L=San Jose/O=CPSG/OU=IT Department/CN=auth-local.cisco.com"
+	echo "Generating local certs for Contiv Proxy"
+	openssl genrsa -out "$host_tls_key" 2048 >/dev/null 2>&1
+	openssl req -new -x509 -sha256 -days 3650 \
+		-key "$host_tls_key" \
+		-out "$host_tls_cert" \
+		-subj "/C=US/ST=CA/L=San Jose/O=CPSG/OU=IT Department/CN=auth-local.cisco.com"
 fi
 
 echo "Starting the installer container"
