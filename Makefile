@@ -59,6 +59,11 @@ release-test-kubelegacy: build
 	make cluster
 	make install-test-kube-legacy 
 
+# shfmt reformats all shell scripts in this repo
+shfmt:
+	go get github.com/mvdan/sh/cmd/shfmt
+	find . -type f -name "*.sh" -print0 | xargs -0 shfmt -w
+
 # Test the installation on the provided cluster. This is for bare-metal and other
 # setups where the cluster is created using non-vagrant mechanisms. 
 # Clusters need to have k8s installed for kubernetes kubeadm based mechanism and
