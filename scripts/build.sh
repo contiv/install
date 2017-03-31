@@ -90,12 +90,13 @@ git clone http://github.com/contiv/ansible
 popd
 
 # Replace versions
-sed -i.bak "s/__ACI_GW_VERSION__/$aci_gw_version/g" $(find $output_dir -type f -name "*.yaml" -or -name "*.sh")
-sed -i.bak "s/__API_PROXY_VERSION__/$auth_proxy_version/g" $(find $output_dir -type f -name "*.yaml" -or -name "*.sh")
-sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$ansible_image_version/g" $(find $output_dir -type f -name "*.yaml" -or -name "*.sh")
-sed -i.bak "s/__CONTIV_VERSION__/$contiv_version/g" $(find $output_dir -type f -name "*.yaml" -or -name "*.sh")
-sed -i.bak "s/__DOCKER_VERSION__/$docker_version/g" $(find $output_dir -type f -name "*.yaml" -or -name "*.sh")
-sed -i.bak "s/__ETCD_VERSION__/$etcd_version/g" $(find $output_dir -type f -name "*.yaml" -or -name "*.sh")
+files=$(find $output_dir -type f -name "*.yaml" -or -name "*.sh" -or -name "*.json")
+sed -i.bak "s/__ACI_GW_VERSION__/$aci_gw_version/g" $files
+sed -i.bak "s/__API_PROXY_VERSION__/$auth_proxy_version/g" $files
+sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$ansible_image_version/g" $files
+sed -i.bak "s/__CONTIV_VERSION__/$contiv_version/g" $files
+sed -i.bak "s/__DOCKER_VERSION__/$docker_version/g" $files
+sed -i.bak "s/__ETCD_VERSION__/$etcd_version/g" $files
 
 # Make all shell script files executable
 chmod +x $(find $output_dir -type f -name "*.sh")
