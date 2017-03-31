@@ -4,7 +4,7 @@ require 'rubygems'
 require 'fileutils'
 require 'yaml'
 
-DEFAULT_K8S_VERSION = 'v1.4.7'.freeze
+DEFAULT_K8S_VERSION = 'v1.5.4'.freeze
 UBUNTU = 'ubuntu'.freeze
 CENTOS = 'centos'.freeze
 RHEL = 'rhel7'.freeze
@@ -146,19 +146,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         end
       end
       if ENV['CONTIV_KUBEADM']
+        k8s_ver = ENV['CONTIV_K8S_VERSION'] || DEFAULT_K8S_VERSION
+        k8s_path = k8s_ver.include?('1.5.') ? 'k8s1.4/' : 'k8s1.6/'
         if node_os == UBUNTU
-          c.vm.provision :shell, path: 'bootstrap_ubuntu.sh'
+          c.vm.provision :shell, path: k8s_path + 'bootstrap_ubuntu.sh'
         else
-          c.vm.provision :shell, path: 'bootstrap_centos.sh'
+          c.vm.provision :shell, path: k8s_path + 'bootstrap_centos.sh'
           c.vm.provision 'shell', inline: 'sudo setenforce 0'
         end
         if n.zero?
           # Install kubernetes on master
-          ks8_ver = ENV['CONTIV_K8S_VERSION'] || DEFAULT_K8S_VERSION
-          c.vm.provision :shell, path: 'k8smaster_centos.sh', args: [token, node_addr, ks8_ver]
+          c.vm.provision :shell, path: k8s_path + 'k8smaster.sh', args: [token, node_addr, k8s_ver]
         else
           # Install kubernetes on nodes
-          c.vm.provision :shell, path: 'k8sworker_centos.sh', args: [token, master_ip]
+          c.vm.provision :shell, path: k8s_path + 'k8sworker.sh', args: [token, master_ip]
         end # if
       elsif node_os != UBUNTU
         c.vm.provision :shell, inline: 'yum install policycoreutils-python -y'
