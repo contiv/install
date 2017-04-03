@@ -40,9 +40,11 @@ If you need to remove Contiv from Docker Swarm and return to your original state
 * Install Kubernetes 1.4:
   1. Contiv service-cidr is currently 10.254.0.0/16. `kubeadm init` step needs to be called with the `--service-cidr 10.254.0.0/16` parameter.
   2. kubeadm installs the latest Kubernetes version. To install the latest supported version use the `--use-kubernetes-version v1.4.7` parameter.<br>
-     See an example script [here.] (https://github.com/contiv/install/blob/master/cluster/k8smaster_centos.sh)
+     See an example script [here.](https://github.com/contiv/install/blob/master/cluster/k8s1.4/k8smaster_centos.sh)
   3. Replace step (3/4) in the kubeadm install guide with the following Contiv Installation Instructions. Contiv installation can be done after completing step (4/4).
   4. Instructions to install Kubernetes 1.4 are available [here.](http://kubernetes.io/docs/getting-started-guides/kubeadm/)
+  5. **NOTE:** A recent kubeadm update has rendered the latest kubeadm unable to install Kubernetes 1.4. To workaround this issue, please use kubeadm version 1.6.0-0.alpha or earlier.
+     Example pre-built RPMs are available as shown [here.](https://github.com/contiv/install/blob/master/cluster/k8s1.4/bootstrap_centos.sh#L22-L26)
 
 ### Contiv Installation
 * Run the following commands on the kubernetes master host.
