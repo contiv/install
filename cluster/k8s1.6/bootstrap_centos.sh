@@ -30,3 +30,5 @@ fi
 if systemctl -q is-enabled firewalld; then
 	systemctl disable firewalld
 fi
+
+exit 0
