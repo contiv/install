@@ -341,7 +341,7 @@ spec:
             - --netmaster-address=__NETMASTER_IP__:9999
           env:
             - name: NO_NETMASTER_STARTUP_CHECK
-              value: "1"
+              value: "0"
             - name: CONTIV_ETCD
               valueFrom:
                 configMapKeyRef:
