@@ -77,7 +77,7 @@ Additional Options for ACI:
 
 Examples:
 
-1. Install Contiv on Kubeadm master host using the specified DNS/IP for netmaster. 
+1. Install Contiv on Kubeadm master host using the specified DNS/IP for netmaster.
 ./install/k8s/install.sh -n <netmaster DNS/IP>
 
 2. Install Contiv on Kubeadm master host using the specified DNS/IP for netmaster and specified ACI configuration.
@@ -101,7 +101,7 @@ error_ret() {
 	exit 1
 }
 
-while getopts ":s:n:v:w:c:t:k:a:u:p:l:d:e:m:y:z:" opt; do
+while getopts ":s:n:v:w:c:t:k:a:u:p:l:d:e:m:y:z:g:i:" opt; do
 	case $opt in
 		s)
 			cluster_store=$OPTARG
@@ -150,6 +150,12 @@ while getopts ":s:n:v:w:c:t:k:a:u:p:l:d:e:m:y:z:" opt; do
 			;;
 		z)
 			apic_cert_dn=$OPTARG
+			;;
+		g)
+			infra_gateway=$OPTARG
+			;;
+		i)
+			infra_subnet=$OPTARG
 			;;
 		:)
 			echo "An argument required for $OPTARG was not passed"
@@ -251,13 +257,18 @@ rm -f /usr/bin/netctl
 cp ./netctl /usr/bin/
 # Install Contiv
 $kubectl apply -f $contiv_yaml
-if [ "$fwd_mode" = "routing" ]; then
-	sleep 60
-	netctl --netmaster http://$netmaster:9999 global set --fwd-mode routing
-fi
 
-$kubectl get deployment/kube-dns -n kube-system -o json >kube-dns.yaml
-$kubectl delete deployment/kube-dns -n kube-system
+sleep 10
+for i in {0..30}; do
+	netctl tenant ls >/dev/null 2>&1
+	if [ "$?" -eq "0" ]; then
+		break
+	fi
+	sleep 10
+done
+
+netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
+netctl --netmaster http://$netmaster:9999 global set --fwd-mode routing
 
 echo "Installation is complete"
 echo "========================================================="
