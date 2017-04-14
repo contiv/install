@@ -9,6 +9,8 @@ ans_opts=""
 ans_user="root"
 ans_key=$src_conf_path/insecure_private_key
 install_scheduler=""
+listen_url=":9999"
+control_url=":9999"
 
 # Check for docker
 
@@ -40,6 +42,9 @@ Advanced Options:
 -v   string     ACI Image (default is contiv/aci-gw:latest). Use this to specify a specific version of the ACI Image.
 -n   string     DNS name/IP address of the host to be used as the net master service VIP. This must be a host present in the cfg.yml file.
 -s   string     URL of the cluster store to be used (for example etcd://etcd master or netmaster IP:2379)
+-l   string     Listen URL for the netmaster (default is ":9999")
+-t   string     Control URL for the netmaster (default is ":9999")
+
 Additional parameters can also be updated in install/ansible/env.json file.
 
 Examples:
@@ -63,7 +68,7 @@ EOF
 # Create the config folder to be shared with the install container.
 mkdir -p "$src_conf_path"
 cluster_param=""
-while getopts ":f:n:a:e:im:d:v:u:c:k:s:" opt; do
+while getopts ":f:n:a:e:im:d:v:u:c:k:s:l:t:" opt; do
 	case $opt in
 		f)
 			cp "$OPTARG" "$host_contiv_config"
@@ -101,6 +106,12 @@ while getopts ":f:n:a:e:im:d:v:u:c:k:s:" opt; do
 			;;
 		k)
 			cp "$OPTARG" "$host_tls_key"
+			;;
+		l)
+			listen_url=$OPTARG
+			;;
+		t)
+			control_url=$OPTARG
 			;;
 		:)
 			echo "An argument required for $OPTARG was not passed"
@@ -157,4 +168,4 @@ ansible_mount="-v $(pwd)/ansible:/ansible:Z"
 config_mount="-v $src_conf_path:$container_conf_path:Z"
 cache_mount="-v $(pwd)/contiv_cache:/var/contiv_cache:Z"
 mounts="$install_mount $ansible_mount $cache_mount $config_mount"
-docker run --rm --net=host $mounts $image_name sh -c "./install/ansible/install.sh $netmaster_param -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param $cluster_param"
+docker run --rm --net=host $mounts $image_name sh -c "./install/ansible/install.sh $netmaster_param -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param $cluster_param -l $listen_url -t $control_url"

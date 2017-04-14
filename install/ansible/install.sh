@@ -34,7 +34,7 @@ error_ret() {
 	exit 1
 }
 
-while getopts ":n:a:im:d:v:s:" opt; do
+while getopts ":n:a:im:d:v:s:l:t:" opt; do
 	case $opt in
 		n)
 			netmaster=$OPTARG
@@ -57,6 +57,11 @@ while getopts ":n:a:im:d:v:s:" opt; do
 		s)
 			cluster_store=$OPTARG
 			install_etcd=false
+		l)
+			listen_url=$OPTARG
+			;;
+		t)
+			control_url=$OPTARG
 			;;
 		:)
 			echo "An argument required for $OPTARG was not passed"
@@ -120,6 +125,8 @@ fi
 
 sed -i.bak "s#.*service_vip.*#\"service_vip\":\"$service_vip\",#g" "$env_file"
 sed -i.bak "s#.*cluster_store.*#\"cluster_store\":\"$cluster_store\",#g" "$env_file"
+sed -i.bak "s#.*listen_url.*#\"listen_url\":\"$listen_url\",#g" "$env_file"
+sed -i.bak "s#.*control_url.*#\"control_url\":\"$control_url\",#g" "$env_file"
 
 # Copy certs
 cp /var/contiv/cert.pem /ansible/roles/auth_proxy/files/

@@ -16,7 +16,7 @@ VERSION=${BUILD_VERSION-$DEV_IMAGE_NAME}
 
 auth_proxy_version=${CONTIV_API_PROXY_VERSION:-"1.0.0-beta.6"}
 aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
-contiv_version=${CONTIV_VERSION:-"1.0.0-beta.6"}
+contiv_version=${CONTIV_VERSION:-"1.0.0-rc1"}
 etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
 ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-"1.0.0-beta.6"}
@@ -86,7 +86,7 @@ curl -sSL https://github.com/contiv/netplugin/releases/download/$contiv_version/
 pushd $output_dir
 tar oxf netplugin-$contiv_version.tar.bz2 netctl
 rm -f netplugin-$contiv_version.tar.bz2
-git clone http://github.com/contiv/ansible
+git clone http://github.com/neelimamukiri/ansible -b netmaster_args
 popd
 
 # Replace versions
