@@ -127,7 +127,9 @@ if [ "$(docker images -q contiv/aci-gw:$aci_gw_version 2>/dev/null)" == "" ]; th
 fi
 aci_image=$(docker images -q contiv/aci-gw:$aci_gw_version)
 docker save $aci_image -o $binary_cache/aci-gw-image.tar
-
+curl -sL -o $binary_cache/openvswitch-2.5.0-2.el7.x86_64.rpm http://cbs.centos.org/kojifiles/packages/openvswitch/2.5.0/2.el7/x86_64/openvswitch-2.5.0-2.el7.x86_64.rpm
+curl -sL -o $binary_cache/ovs-common.deb http://mirrors.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-common_2.5.2-0ubuntu0.16.04.1_amd64.deb
+curl -sL -o $binary_cache/ovs-switch.deb http://mirrors.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-switch_2.5.2-0ubuntu0.16.04.1_amd64.deb
 curl -sL -o $binary_cache/netplugin-$contiv_version.tar.bz2 https://github.com/contiv/netplugin/releases/download/$contiv_version/netplugin-$contiv_version.tar.bz2
 
 env_file=$output_dir/install/ansible/env.json
