@@ -97,6 +97,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if node_os == RHEL
         # Download rhel7.2 box from https://access.redhat.com/downloads/content/293/ver=2/rhel---7/2.0.0/x86_64/product-software
         # Add it as rhel7 vagrant box add rhel-cdk-kubernetes-7.2-29.x86_64.vagrant-virtualbox.box --name=rhel7
+        # run this command once you done with adding vagrant box : vagrant plugin install vagrant-registration
+        # You need to export following variable, in order to run on RHEL7
+        # export CONTIV_RHEL_USER=<your developer account username of redhat site>
+        # export CONTIV_RHEL_PASSWD=<your developer account password of redhat site>
+        # export CONTIV_NODE_OS=rhel7
         c.vm.box = 'rhel7'
         config.ssh.insert_key = false
       elsif node_os == UBUNTU
