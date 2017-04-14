@@ -31,6 +31,3 @@ fi
 kubectl create -f install/k8s/$k8sfolder/cleanup.yaml
 sleep 60
 kubectl delete -f install/k8s/$k8sfolder/cleanup.yaml
-
-# Re-creating the kube-dns deployment
-kubectl create -f kube-dns.yaml
