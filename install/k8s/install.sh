@@ -35,7 +35,7 @@ contiv_config=""
 # Specify TLS certs to be used for API server
 tls_cert=""
 tls_key=""
-fwd_mode="bridge"
+fwd_mode="routing"
 # ACI parameters
 apic_url=""
 apic_username=""
@@ -46,6 +46,9 @@ apic_epg_bridge_domain="not_specified"
 apic_contracts_unrestricted_mode="no"
 aci_key=""
 apic_cert_dn=""
+
+infra_gateway="132.1.1.1"
+infra_subnet="132.1.1.0/24"
 
 usage() {
 	echo "Usage:"
@@ -259,6 +262,7 @@ cp ./netctl /usr/bin/
 $kubectl apply -f $contiv_yaml
 
 sleep 10
+set +e
 for i in {0..30}; do
 	netctl tenant ls >/dev/null 2>&1
 	if [ "$?" -eq "0" ]; then
@@ -266,9 +270,10 @@ for i in {0..30}; do
 	fi
 	sleep 10
 done
+set -e
 
+netctl global set --fwd-mode $fwd_mode
 netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
-netctl --netmaster http://$netmaster:9999 global set --fwd-mode routing
 
 echo "Installation is complete"
 echo "========================================================="
