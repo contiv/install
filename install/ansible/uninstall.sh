@@ -143,12 +143,12 @@ echo "Uninstalling Contiv"
 echo '- include: uninstall_auth_proxy.yml' >$ansible_path/uninstall_plays.yml
 echo '- include: uninstall_contiv.yml' >>$ansible_path/uninstall_plays.yml
 
-if [ $uninstall_scheduler = True ]; then
+if [ $uninstall_scheduler == true ]; then
 	echo '- include: uninstall_scheduler.yml' >>$ansible_path/uninstall_plays.yml
 	echo '- include: uninstall_etcd.yml' >>$ansible_path/uninstall_plays.yml
 	echo '- include: uninstall_docker.yml' >>$ansible_path/uninstall_plays.yml
 else
-	if [ "$cluster_store" = "" ]; then
+	if [ "$cluster_store" == "" ]; then
 		echo '- include: uninstall_etcd.yml' >>$ansible_path/uninstall_plays.yml
 	fi
 fi
