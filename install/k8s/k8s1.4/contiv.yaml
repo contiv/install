@@ -180,6 +180,11 @@ spec:
                 configMapKeyRef:
                   name: contiv-config
                   key: cluster_store
+            - name: CONTIV_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: contiv-config
+                  key: config
           securityContext:
             privileged: true
           volumeMounts:
