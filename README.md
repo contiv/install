@@ -59,6 +59,7 @@ If you need to remove Contiv from Docker Swarm and return to your original state
   ` <br> For example: <br> `./install/k8s/install.sh -n <netmaster DNS/IP> -a https://apic_host:443 -u apic_user -p apic_password -l topology/pod-xxx/node-xxx -d phys_domain -e not_specified -m no
   `
  <br> where `$CONTIV_MASTER` is the Contiv proxy or Net Master IP.
+* To install Contiv with a custom infra network and gateway: <br>`./install/k8s/install.sh -n <netmaster DNS/IP> -g <GATEWAY IP> -i <SUBNET>`
 * To see additional install options, run <br> `./install/ansible/install.sh`.
 
 ### Removing Contiv
