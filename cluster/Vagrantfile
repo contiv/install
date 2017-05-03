@@ -93,6 +93,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   num_nodes.times do |n|
     node_name = node_names[n]
     node_addr = node_ips[n]
+
+    config.vm.provider 'virtualbox' do |v|
+      v.linked_clone = true if Vagrant::VERSION >= "1.8"
+    end
+
     config.vm.define vm_name = node_name do |c|
       if node_os == RHEL
         # Download rhel7.2 box from https://access.redhat.com/downloads/content/293/ver=2/rhel---7/2.0.0/x86_64/product-software
