@@ -8,6 +8,7 @@ ans_opts=""
 ans_user="root"
 ans_key=$src_conf_path/insecure_private_key
 uninstall_scheduler=""
+uninstall_v2plugin=""
 reset_params=""
 
 # Check for docker
@@ -27,6 +28,7 @@ Mandatory Options:
 -e   string     SSH key to connect to the hosts
 -u   string     SSH User
 -i              Uninstall the scheduler stack 
+-p              Uninstall v2plugin
 
 Additional Options:
 -m   string     Network Mode for the Contiv installation (“standalone” or “aci”). Default mode is “standalone” and should be used for non ACI-based setups
@@ -56,7 +58,7 @@ EOF
 # Create the config folder to be shared with the install container.
 mkdir -p "$src_conf_path"
 cluster_param=""
-while getopts ":f:n:a:e:im:d:v:u:rgs:" opt; do
+while getopts ":f:n:a:e:ipm:d:v:u:rgs:" opt; do
 	case $opt in
 		f)
 			cp "$OPTARG" "$host_contiv_config"
@@ -92,6 +94,9 @@ while getopts ":f:n:a:e:im:d:v:u:rgs:" opt; do
 			echo "Uninstalling Contiv, Docker and Swarm in 20 seconds"
 			sleep 20
 			uninstall_scheduler="-i"
+			;;
+		p)
+			uninstall_v2plugin="-p"
 			;;
 		r)
 			reset_params="-r $reset_params"
@@ -143,4 +148,4 @@ ansible_mount="-v $(pwd)/ansible:/ansible:Z"
 config_mount="-v $src_conf_path:$container_conf_path:Z"
 cache_mount="-v $(pwd)/contiv_cache:/var/contiv_cache:Z"
 mounts="$install_mount $ansible_mount $cache_mount $config_mount"
-docker run --rm --net=host $mounts $image_name sh -c "./install/ansible/uninstall.sh $netmaster_param -a \"$ans_opts\" $uninstall_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param $reset_params $cluster_param"
+docker run --rm --net=host $mounts $image_name sh -c "./install/ansible/uninstall.sh $netmaster_param -a \"$ans_opts\" $uninstall_scheduler $uninstall_v2plugin -m $contiv_network_mode -d $fwd_mode $aci_param $reset_params $cluster_param"
