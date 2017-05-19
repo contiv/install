@@ -11,7 +11,6 @@ if [ "$script_dir" == "." ]; then
 fi
 
 DEV_IMAGE_NAME="devbuild"
-IMAGE_NAME="contiv/auth_proxy"
 VERSION=${BUILD_VERSION-$DEV_IMAGE_NAME}
 
 auth_proxy_version=${CONTIV_API_PROXY_VERSION:-"1.0.0"}
