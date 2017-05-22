@@ -8,10 +8,9 @@
 
 cd -P -- "$(dirname -- "$0")"
 
+# Install github-release binary if not present
 if [ -z "$(which github-release)" ]; then
-	echo "Please install github-release before running this script"
-	echo "You may download a release from https://github.com/aktau/github-release/releases or run 'go get github.com/aktau/github-release' if you have Go installed"
-	exit 1
+	go get -u github.com/aktau/github-release || exit 1
 fi
 
 if [ -z "$BUILD_VERSION" ]; then
@@ -43,9 +42,6 @@ if [ "$OLD_VERSION" != "none" ]; then
 else
 	changelog="don't forget to update the changelog"
 fi
-
-# Install github-release binary if not present
-[ -n "$(which github-release)" ] || go get -u github.com/aktau/github-release || exit 1
 
 TAR_FILENAME="contiv-"${BUILD_VERSION}".tgz"
 TAR_FILENAME2="contiv-full-"${BUILD_VERSION}".tgz"
