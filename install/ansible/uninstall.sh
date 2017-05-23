@@ -15,6 +15,7 @@ cluster_store=""
 
 # Should the scheduler stack (docker swarm or k8s be uninstalled)
 uninstall_scheduler=false
+uninstall_v2plugin=false
 reset="false"
 reset_images="false"
 
@@ -36,7 +37,7 @@ error_ret() {
 	exit 1
 }
 
-while getopts ":n:a:im:d:v:rgs:" opt; do
+while getopts ":n:a:ipm:d:v:rgs:" opt; do
 	case $opt in
 		n)
 			netmaster=$OPTARG
@@ -46,6 +47,9 @@ while getopts ":n:a:im:d:v:rgs:" opt; do
 			;;
 		i)
 			uninstall_scheduler=true
+			;;
+		p)
+			uninstall_v2plugin=true
 			;;
 		m)
 			contiv_network_mode=$OPTARG
@@ -140,8 +144,13 @@ fi
 echo "Uninstalling Contiv"
 
 # Uninstall contiv & API Proxy
-echo '- include: uninstall_auth_proxy.yml' >$ansible_path/uninstall_plays.yml
-echo '- include: uninstall_contiv.yml' >>$ansible_path/uninstall_plays.yml
+if [ $uninstall_v2plugin == true ]; then
+	echo '- include: uninstall_auth_proxy.yml' >$ansible_path/uninstall_plays.yml
+	echo '- include: uninstall_v2plugin.yml' >>$ansible_path/uninstall_plays.yml
+else
+	echo '- include: uninstall_auth_proxy.yml' >$ansible_path/uninstall_plays.yml
+	echo '- include: uninstall_contiv.yml' >>$ansible_path/uninstall_plays.yml
+fi
 
 if [ $uninstall_scheduler == true ]; then
 	echo '- include: uninstall_scheduler.yml' >>$ansible_path/uninstall_plays.yml

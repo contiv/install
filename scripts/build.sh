@@ -18,6 +18,7 @@ contiv_version=${CONTIV_VERSION:-"1.0.0"}
 aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
 ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$contiv_version}
 auth_proxy_version=${CONTIV_API_PROXY_VERSION:-$contiv_version}
+v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.0.0"}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
 etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
 
@@ -33,7 +34,7 @@ function error_ret() {
 	exit 1
 }
 
-while getopts ":a:p:c:e:" opt; do
+while getopts ":a:p:c:e:v:" opt; do
 	case $opt in
 		a)
 			aci_gw_version=$OPTARG
@@ -46,6 +47,9 @@ while getopts ":a:p:c:e:" opt; do
 			;;
 		p)
 			auth_proxy_version=$OPTARG
+			;;
+		v)
+			v2plugin_version=$OPTARG
 			;;
 		:)
 			echo "An argument required for $OPTARG was not passed"
@@ -97,6 +101,7 @@ sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$ansible_image_version/g" $files
 sed -i.bak "s/__CONTIV_VERSION__/$contiv_version/g" $files
 sed -i.bak "s/__DOCKER_VERSION__/$docker_version/g" $files
 sed -i.bak "s/__ETCD_VERSION__/$etcd_version/g" $files
+sed -i.bak "s/__CONTIV_V2PLUGIN_VERSION__/$v2plugin_version/g" $files
 
 # Make all shell script files executable
 chmod +x $(find $output_dir -type f -name "*.sh")
