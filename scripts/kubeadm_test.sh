@@ -18,6 +18,7 @@ user=${CONTIV_SSH_USER:-"$def_user"}
 # If BUILD_VERSION is not defined, we use a local dev build, that must have been created with make release
 install_version="contiv-${BUILD_VERSION:-devbuild}"
 default_net_cidr="${DEFAULT_NET:-20.1.1.0/24}"
+default_net_gw="${DEFAULT_NET:-20.1.1.1}"
 
 # For local builds, copy the build binaries to the vagrant node, using the vagrant ssh-key
 if [ -f "release/${install_version}.tgz" ]; then
@@ -53,7 +54,7 @@ CONTIV_KUBEADM=1 vagrant ssh contiv-node1 -- "$COMMANDS"
 set +e
 read -r -d '' SETUP_DEFAULT_NET <<-EOF
     cd ${install_version} && \\
-    netctl net create -s ${default_net_cidr} default-net
+    netctl net create -s ${default_net_cidr} -g ${default_net_gw} default-net
 EOF
 set -e
 
