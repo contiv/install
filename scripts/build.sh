@@ -13,12 +13,12 @@ fi
 DEV_IMAGE_NAME="devbuild"
 VERSION=${BUILD_VERSION-$DEV_IMAGE_NAME}
 
-contiv_version=${CONTIV_VERSION:-"1.0.0"}
+contiv_version=${CONTIV_VERSION:-"1.0.1"}
 
 aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
 ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$contiv_version}
 auth_proxy_version=${CONTIV_API_PROXY_VERSION:-$contiv_version}
-v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.0.0"}
+v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.0.1"}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
 etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
 
