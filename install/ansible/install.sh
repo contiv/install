@@ -34,7 +34,7 @@ error_ret() {
 	exit 1
 }
 
-while getopts ":n:a:im:d:v:s:" opt; do
+while getopts ":n:a:im:d:v:ps:" opt; do
 	case $opt in
 		n)
 			netmaster=$OPTARG
@@ -53,6 +53,9 @@ while getopts ":n:a:im:d:v:s:" opt; do
 			;;
 		v)
 			aci_image=$OPTARG
+			;;
+		p)
+			contiv_v2plugin_install=true
 			;;
 		s)
 			cluster_store=$OPTARG
@@ -132,7 +135,8 @@ fi
 echo "Installing Contiv"
 # Always install the base, install the scheduler stack/etcd if required
 echo '- include: install_base.yml' >$ansible_path/install_plays.yml
-if [ "$install_scheduler" == "true" ]; then
+
+if [ "$install_scheduler" == "true" ] ; then
 	echo '- include: install_docker.yml' >>$ansible_path/install_plays.yml
 	echo '- include: install_etcd.yml' >>$ansible_path/install_plays.yml
 	echo '- include: install_scheduler.yml' >>$ansible_path/install_plays.yml
@@ -142,8 +146,13 @@ else
 	fi
 fi
 # Install contiv & API Proxy
-echo '- include: install_contiv.yml' >>$ansible_path/install_plays.yml
-echo '- include: install_auth_proxy.yml' >>$ansible_path/install_plays.yml
+if [ "$contiv_v2plugin_install" == "true" ] ; then
+	echo '- include: install_v2plugin.yml' >>$ansible_path/install_plays.yml
+	echo '- include: install_auth_proxy.yml' >>$ansible_path/install_plays.yml
+else
+	echo '- include: install_contiv.yml' >>$ansible_path/install_plays.yml
+	echo '- include: install_auth_proxy.yml' >>$ansible_path/install_plays.yml
+fi
 
 log_file_name="contiv_install_$(date -u +%m-%d-%Y.%H-%M-%S.UTC).log"
 log_file="/var/contiv/$log_file_name"

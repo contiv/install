@@ -68,6 +68,8 @@ Additional Options:
 -c   string     Configuration file for netplugin
 -t   string     Certificate to use for auth proxy https endpoint
 -k   string     Key to use for auth proxy https endpoint
+-g   string     Gateway to use for the infrastructure network
+-i   string     The subnet to use for the infrastructure network
 
 Additional Options for ACI:
 -a   string     APIC URL to use for ACI mode
@@ -286,6 +288,6 @@ echo " Configure ACI mode (optional)"
 echo " netctl global set --fabric-mode aci --vlan-range <start>-<end>"
 echo " Create a default network"
 echo " netctl net create -t default --subnet=<CIDR> default-net"
-echo " For example, netctl net create -t default --subnet=20.1.1.0/24 default-net"
+echo " For example, netctl net create -t default --subnet=20.1.1.0/24 -g 20.1.1.1 default-net"
 echo " "
 echo "========================================================="
