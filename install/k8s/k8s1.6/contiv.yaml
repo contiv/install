@@ -137,6 +137,8 @@ spec:
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
       serviceAccountName: contiv-netplugin
       containers:
         # Runs netplugin container on each Kubernetes node.  This
@@ -253,6 +255,8 @@ spec:
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
       serviceAccountName: contiv-netmaster
       containers:
         - name: contiv-netmaster
@@ -342,6 +346,8 @@ spec:
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
       serviceAccountName: contiv-netmaster
       containers:
         - name: contiv-api-proxy
