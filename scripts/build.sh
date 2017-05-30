@@ -18,9 +18,16 @@ contiv_version=${CONTIV_VERSION:-"1.0.0"}
 aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
 ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$contiv_version}
 auth_proxy_version=${CONTIV_API_PROXY_VERSION:-$contiv_version}
-v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.0.0"}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
 etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
+
+# the installer currently pulls the v2plugin image directly from Docker Hub, but
+# this will change to being downloaded from the Docker Store in the future.
+# because of this, the default value for this variable will become the latest
+# version that is available in the Docker Store and should be considered
+# independent of $contiv_version above.
+v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.0.0"}
+
 
 function usage() {
 	echo "Usage:"
