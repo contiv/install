@@ -207,6 +207,8 @@ fi
 
 if [ "$apic_url" != "" ]; then
 	cat $contiv_aci_gw_template >>$contiv_yaml
+	# We do not support routing in ACI mode
+	fwd_mode="bridge"
 fi
 
 # We will store the ACI key in a k8s secret.
@@ -274,8 +276,10 @@ for i in {0..30}; do
 done
 set -e
 
-netctl global set --fwd-mode $fwd_mode
-netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
+if [ "$fwd_mode" == "routing" ]; then
+	netctl global set --fwd-mode $fwd_mode
+	netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
+fi
 
 echo "Installation is complete"
 echo "========================================================="
