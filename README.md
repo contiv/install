@@ -17,20 +17,23 @@ If your access to the Internet is limited or slow and you want to download the f
 Note: The full image contains only Contiv components. Installing Docker Swarm will need Internet connectivity.
 * Extract the install bundle <br>`tar oxf contiv-$VERSION.tgz`.
 * Change directories to the extracted folder <br>`cd contiv-$VERSION`
-* To install Contiv with Docker Swarm:<br> `./install/ansible/install_swarm.sh -f cfg.yml -e <ssh key> -u <username> -i`
-* To install Contiv with Docker Swarm and ACI:<br> `./install/ansible/install_swarm.sh -f aci_cfg.yml -e <ssh key> -u <username> -i -m aci`
+* To install Contiv with Docker Legacy Swarm:<br> `./install/ansible/install_swarm.sh -f cfg.yml -e <ssh key> -u <username> -i`
+* To install Contiv with Docker Legacy Swarm and ACI:<br> `./install/ansible/install_swarm.sh -f aci_cfg.yml -e <ssh key> -u <username> -i -m aci`
+* To install Contiv v2plugin:<br> `./install/ansible/install_swarm.sh -f cfg.yml -e <ssh key> -u <username> -p`
 * Example host config files are available at install/ansible/cfg.yml and install/ansible/aci_cfg.yml
 * To see additional install options and examples, run <br>`./install/ansible/install_swarm.sh -h`.
 
 ### Removing Contiv
 
 If you need to remove Contiv from Docker Swarm and return to your original state, you can uninstall Contiv with the following commands:
-* To uninstall Contiv and Docker Swarm:<br>
+* To uninstall Contiv and Docker Legacy Swarm:<br>
 `./install/ansible/uninstall_swarm.sh -f cfg.yml -e <ssh key> -u <username> -i`
-* To uninstall Contiv and Docker Swarm with ACI support:<br>
+* To uninstall Contiv and Docker Legacy Swarm with ACI support:<br>
 `./install/ansible/uninstall_swarm.sh -f aci_cfg.yml -e <ssh key> -u <username> -i -m aci`
-* To uninstall Contiv and not Docker Swarm:<br>
+* To uninstall Contiv and not Docker Legacy Swarm:<br>
 `./install/ansible/uninstall_swarm.sh -f cfg.yml -e <ssh key> -u <username>`
+* To uninstall Contiv v2plugin:<br>
+`./install/ansible/uninstall_swarm.sh -f cfg.yml -e <ssh key> -u <username> -p`
 * Note: Adding the `-r` flag, will cleanup any Contiv state.
 
 ## Kubernetes Installation

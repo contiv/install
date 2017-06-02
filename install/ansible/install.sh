@@ -90,6 +90,11 @@ if [ "$netmaster" = "" ]; then
 	usage
 fi
 
+if [ "$install_scheduler" = "true" ] && [ "$contiv_v2plugin_install" = "true" ]; then
+	echo "ERROR: -p and -i are mutually exclusive"
+	usage
+fi
+
 ansible_path=./ansible
 env_file=install/ansible/env.json
 # Verify ansible can reach all hosts
@@ -130,6 +135,9 @@ cp /var/contiv/key.pem /ansible/roles/auth_proxy/files/
 
 if [ "$aci_image" != "" ]; then
 	sed -i.bak "s#.*aci_gw_image.*#\"aci_gw_image\":\"$aci_image\",#g" "$env_file"
+fi
+if [ "$contiv_v2plugin_install" == "true" ]; then
+	sed -i.bak "s#.*contiv_v2plugin_install.*#\"contiv_v2plugin_install\":\"True\",#g" "$env_file"
 fi
 
 echo "Installing Contiv"
