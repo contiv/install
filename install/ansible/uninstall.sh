@@ -1,5 +1,6 @@
 #!/bin/sh
 
+set -xeuo pipefail
 # This scripts runs in a container with ansible installed.
 . ./install/ansible/install_defaults.sh
 
@@ -182,8 +183,11 @@ chmod 666 $inventory_log
 chmod 666 $env_file
 chmod 666 $log_file
 
+set +x
+
 if [ "$unreachable" = "" ] && [ "$failed" = "" ]; then
 	echo "Uninstallation is complete"
+  exit 0
 else
 	echo "Uninstallation failed"
 	echo "========================================================="
