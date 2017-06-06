@@ -28,7 +28,6 @@ etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
 # independent of $contiv_version above.
 v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.0.0"}
 
-
 function usage() {
 	echo "Usage:"
 	echo "./release.sh -a <ACI gateway image> -c <contiv version> -e <etcd version> -p <API proxy image version> "

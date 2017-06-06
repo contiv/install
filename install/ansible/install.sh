@@ -103,8 +103,8 @@ env_file=install/ansible/env.json
 # Verify ansible can reach all hosts
 
 echo "Verifying ansible reachability"
-ansible all -vvv $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' >&$inventory_log
-if [ !egrep 'FAIL|UNREACHABLE' $inventory_log >&/dev/null ]; then
+ansible all -vvv $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' | tee $inventory_log
+if [ egrep 'FAIL|UNREACHABLE' $inventory_log > /dev/null ]; then
 	echo "WARNING Some of the hosts are not accessible via passwordless SSH"
 	echo " "
 	echo "This means either the host is unreachable or passwordless SSH is not"
@@ -146,7 +146,7 @@ echo "Installing Contiv"
 # Always install the base, install the scheduler stack/etcd if required
 echo '- include: install_base.yml' >$ansible_path/install_plays.yml
 
-if [ "$install_scheduler" == "true" ] ; then
+if [ "$install_scheduler" == "true" ]; then
 	echo '- include: install_docker.yml' >>$ansible_path/install_plays.yml
 	echo '- include: install_etcd.yml' >>$ansible_path/install_plays.yml
 	echo '- include: install_scheduler.yml' >>$ansible_path/install_plays.yml
@@ -156,7 +156,7 @@ else
 	fi
 fi
 # Install contiv & API Proxy
-if [ "$contiv_v2plugin_install" == "true" ] ; then
+if [ "$contiv_v2plugin_install" == "true" ]; then
 	echo '- include: install_v2plugin.yml' >>$ansible_path/install_plays.yml
 	echo '- include: install_auth_proxy.yml' >>$ansible_path/install_plays.yml
 else
@@ -200,7 +200,7 @@ if [ "$unreachable" = "" ] && [ "$failed" = "" ]; then
 	echo " For example, netctl net create -t default --subnet=20.1.1.0/24 default-net"
 	echo " "
 	echo "========================================================="
-  exit 0
+	exit 0
 else
 	echo "Installation failed"
 	echo "========================================================="
