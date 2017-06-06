@@ -1,5 +1,6 @@
 #!/bin/sh
 
+set -xeuo pipefail
 # This scripts runs in a container with ansible installed.
 . ./install/ansible/install_defaults.sh
 
@@ -103,9 +104,8 @@ env_file=install/ansible/env.json
 # Verify ansible can reach all hosts
 
 echo "Verifying ansible reachability"
-ansible all $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' >&$inventory_log
-egrep 'FAIL|UNREACHABLE' $inventory_log >&/dev/null
-if [ $? -eq 0 ]; then
+ansible all -vvv $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' | tee $inventory_log
+if [ egrep 'FAIL|UNREACHABLE' $inventory_log > /dev/null ]; then
 	echo "WARNING Some of the hosts are not accessible via passwordless SSH"
 	echo " "
 	echo "This means either the host is unreachable or passwordless SSH is not"
@@ -182,8 +182,11 @@ chmod 666 $inventory_log
 chmod 666 $env_file
 chmod 666 $log_file
 
+set +x
+
 if [ "$unreachable" = "" ] && [ "$failed" = "" ]; then
 	echo "Uninstallation is complete"
+	exit 0
 else
 	echo "Uninstallation failed"
 	echo "========================================================="
