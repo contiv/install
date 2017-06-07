@@ -11,15 +11,23 @@ if [ "$script_dir" == "." ]; then
 fi
 
 DEV_IMAGE_NAME="devbuild"
-IMAGE_NAME="contiv/auth_proxy"
 VERSION=${BUILD_VERSION-$DEV_IMAGE_NAME}
 
-auth_proxy_version=${CONTIV_API_PROXY_VERSION:-"1.0.0-beta.6"}
+contiv_version=${CONTIV_VERSION:-"1.0.0"}
+
 aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
-contiv_version=${CONTIV_VERSION:-"1.0.0-rc1"}
-etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
+
+ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$contiv_version}
+auth_proxy_version=${CONTIV_API_PROXY_VERSION:-$contiv_version}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
-ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-"1.0.0-beta.6"}
+etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
+
+# the installer currently pulls the v2plugin image directly from Docker Hub, but
+# this will change to being downloaded from the Docker Store in the future.
+# because of this, the default value for this variable will become the latest
+# version that is available in the Docker Store and should be considered
+# independent of $contiv_version above.
+v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.0.0"}
 
 function usage() {
 	echo "Usage:"
@@ -33,7 +41,7 @@ function error_ret() {
 	exit 1
 }
 
-while getopts ":a:p:c:e:" opt; do
+while getopts ":a:p:c:e:v:" opt; do
 	case $opt in
 		a)
 			aci_gw_version=$OPTARG
@@ -46,6 +54,9 @@ while getopts ":a:p:c:e:" opt; do
 			;;
 		p)
 			auth_proxy_version=$OPTARG
+			;;
+		v)
+			v2plugin_version=$OPTARG
 			;;
 		:)
 			echo "An argument required for $OPTARG was not passed"
@@ -97,6 +108,7 @@ sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$ansible_image_version/g" $files
 sed -i.bak "s/__CONTIV_VERSION__/$contiv_version/g" $files
 sed -i.bak "s/__DOCKER_VERSION__/$docker_version/g" $files
 sed -i.bak "s/__ETCD_VERSION__/$etcd_version/g" $files
+sed -i.bak "s/__CONTIV_V2PLUGIN_VERSION__/$v2plugin_version/g" $files
 
 # Make all shell script files executable
 chmod +x $(find $output_dir -type f -name "*.sh")
@@ -115,30 +127,7 @@ mkdir -p $binary_cache
 # Create the minimal tar bundle
 tar czf $tmp_output_file -C $release_dir contiv-$VERSION
 
-# Save the auth proxy & aci-gw images for packaging the full docker images with contiv install binaries
-if [ "$(docker images -q contiv/auth_proxy:$auth_proxy_version 2>/dev/null)" == "" ]; then
-	docker pull contiv/auth_proxy:$auth_proxy_version
-fi
-proxy_image=$(docker images -q contiv/auth_proxy:$auth_proxy_version)
-docker save $proxy_image -o $binary_cache/auth-proxy-image.tar
-
-if [ "$(docker images -q contiv/aci-gw:$aci_gw_version 2>/dev/null)" == "" ]; then
-	docker pull contiv/aci-gw:$aci_gw_version
-fi
-aci_image=$(docker images -q contiv/aci-gw:$aci_gw_version)
-docker save $aci_image -o $binary_cache/aci-gw-image.tar
-
-curl -sL -o $binary_cache/netplugin-$contiv_version.tar.bz2 https://github.com/contiv/netplugin/releases/download/$contiv_version/netplugin-$contiv_version.tar.bz2
-
-env_file=$output_dir/install/ansible/env.json
-sed -i.bak "s#.*auth_proxy_local_install.*#  \"auth_proxy_local_install\": True,#g" $env_file
-sed -i.bak "s#.*contiv_network_local_install.*#  \"contiv_network_local_install\": True#g" $env_file
-
-# Create the full tar bundle
-tar czf $tmp_full_output_file -C $release_dir contiv-$VERSION
-
 mv $tmp_output_file $output_file
-mv $tmp_full_output_file $full_output_file
 rm -rf $output_dir
 
 echo "Success: Contiv Installer version $VERSION is available at $output_file"

@@ -1,5 +1,6 @@
 #!/bin/sh
 
+set -xeuo pipefail
 # This scripts runs in a container with ansible installed.
 . ./install/ansible/install_defaults.sh
 
@@ -15,6 +16,7 @@ cluster_store=""
 
 # Should the scheduler stack (docker swarm or k8s be uninstalled)
 uninstall_scheduler=false
+uninstall_v2plugin=false
 reset="false"
 reset_images="false"
 
@@ -36,7 +38,7 @@ error_ret() {
 	exit 1
 }
 
-while getopts ":n:a:im:d:v:rgs:" opt; do
+while getopts ":n:a:ipm:d:v:rgs:" opt; do
 	case $opt in
 		n)
 			netmaster=$OPTARG
@@ -46,6 +48,9 @@ while getopts ":n:a:im:d:v:rgs:" opt; do
 			;;
 		i)
 			uninstall_scheduler=true
+			;;
+		p)
+			uninstall_v2plugin=true
 			;;
 		m)
 			contiv_network_mode=$OPTARG
@@ -99,9 +104,8 @@ env_file=install/ansible/env.json
 # Verify ansible can reach all hosts
 
 echo "Verifying ansible reachability"
-ansible all $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' >&$inventory_log
-egrep 'FAIL|UNREACHABLE' $inventory_log >&/dev/null
-if [ $? -eq 0 ]; then
+ansible all -vvv $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' | tee $inventory_log
+if [ egrep 'FAIL|UNREACHABLE' $inventory_log > /dev/null ]; then
 	echo "WARNING Some of the hosts are not accessible via passwordless SSH"
 	echo " "
 	echo "This means either the host is unreachable or passwordless SSH is not"
@@ -136,19 +140,27 @@ sed -i.bak "s#__CLUSTER_STORE__#$cluster#g" $env_file
 if [ "$aci_image" != "" ]; then
 	sed -i.bak "s#.*aci_gw_image.*#\"aci_gw_image\":\"$aci_image\",#g" "$env_file"
 fi
+if [ "$contiv_v2plugin_install" == "true" ]; then
+	sed -i.bak "s#.*contiv_v2plugin_install.*#\"contiv_v2plugin_install\":\"True\",#g" "$env_file"
+fi
 
 echo "Uninstalling Contiv"
 
 # Uninstall contiv & API Proxy
-echo '- include: uninstall_auth_proxy.yml' >$ansible_path/uninstall_plays.yml
-echo '- include: uninstall_contiv.yml' >>$ansible_path/uninstall_plays.yml
+if [ $uninstall_v2plugin == true ]; then
+	echo '- include: uninstall_auth_proxy.yml' >$ansible_path/uninstall_plays.yml
+	echo '- include: uninstall_v2plugin.yml' >>$ansible_path/uninstall_plays.yml
+else
+	echo '- include: uninstall_auth_proxy.yml' >$ansible_path/uninstall_plays.yml
+	echo '- include: uninstall_contiv.yml' >>$ansible_path/uninstall_plays.yml
+fi
 
-if [ $uninstall_scheduler = True ]; then
+if [ $uninstall_scheduler == true ]; then
 	echo '- include: uninstall_scheduler.yml' >>$ansible_path/uninstall_plays.yml
 	echo '- include: uninstall_etcd.yml' >>$ansible_path/uninstall_plays.yml
 	echo '- include: uninstall_docker.yml' >>$ansible_path/uninstall_plays.yml
 else
-	if [ "$cluster_store" = "" ]; then
+	if [ "$cluster_store" == "" ]; then
 		echo '- include: uninstall_etcd.yml' >>$ansible_path/uninstall_plays.yml
 	fi
 fi
@@ -170,8 +182,11 @@ chmod 666 $inventory_log
 chmod 666 $env_file
 chmod 666 $log_file
 
+set +x
+
 if [ "$unreachable" = "" ] && [ "$failed" = "" ]; then
 	echo "Uninstallation is complete"
+	exit 0
 else
 	echo "Uninstallation failed"
 	echo "========================================================="

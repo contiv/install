@@ -61,6 +61,12 @@ EOF
 ifup eth1
 SCRIPT
 
+provision_etc_hosts = <<SCRIPT
+cat <<EOF > /etc/hosts
+$1
+EOF
+SCRIPT
+
 provision_key = <<SCRIPT
 sudo apt-get install python -y
 mkdir -p /home/ubuntu/.ssh/
@@ -93,10 +99,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   num_nodes.times do |n|
     node_name = node_names[n]
     node_addr = node_ips[n]
+
+    config.vm.provider 'virtualbox' do |v|
+      v.linked_clone = true if Vagrant::VERSION >= '1.8'
+    end
+
     config.vm.define vm_name = node_name do |c|
       if node_os == RHEL
         # Download rhel7.2 box from https://access.redhat.com/downloads/content/293/ver=2/rhel---7/2.0.0/x86_64/product-software
         # Add it as rhel7 vagrant box add rhel-cdk-kubernetes-7.2-29.x86_64.vagrant-virtualbox.box --name=rhel7
+        # run this command once you done with adding vagrant box : vagrant plugin install vagrant-registration
+        # You need to export following variable, in order to run on RHEL7
+        # export CONTIV_RHEL_USER=<your developer account username of redhat site>
+        # export CONTIV_RHEL_PASSWD=<your developer account password of redhat site>
+        # export CONTIV_NODE_OS=rhel7
         c.vm.box = 'rhel7'
         config.ssh.insert_key = false
       elsif node_os == UBUNTU
@@ -109,13 +125,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         s.inline = provision_node
         s.args = [ENV['http_proxy'] || '', ENV['https_proxy'] || '']
       end
-      if node_os != UBUNTU
-        c.vm.provision 'shell' do |s|
-          s.inline = provision_net
-          etc_file = (ENV['VAGRANT_CWD'] || '.') + '/.etc_hosts'
-          hosts = File.read(etc_file)
-          s.args = [hosts]
-        end
+      c.vm.provision 'shell' do |s|
+        s.inline = node_os == UBUNTU ? provision_etc_hosts : provision_net
+        etc_file = (ENV['VAGRANT_CWD'] || '.') + '/.etc_hosts'
+        hosts = File.read(etc_file)
+        s.args = [hosts]
       end
 
       # configure ip address etc
@@ -148,6 +162,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if ENV['CONTIV_KUBEADM']
         k8s_ver = ENV['CONTIV_K8S_VERSION'] || DEFAULT_K8S_VERSION
         k8s_path = k8s_ver.include?('1.5.') || k8s_ver.include?('1.4.') ? 'k8s1.4/' : 'k8s1.6/'
+        if node_os == RHEL
+          c.vm.provision 'shell', inline: <<-EOS
+            yum remove -y kubernetes-node-*
+            yum remove -y kubernetes-client-*
+            EOS
+        end
         if node_os == UBUNTU
           c.vm.provision :shell, path: k8s_path + 'bootstrap_ubuntu.sh'
         else

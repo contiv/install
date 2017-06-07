@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -xeuo pipefail
+
 # This scripts runs in a container with ansible installed.
 . ./install/ansible/install_defaults.sh
 
@@ -19,6 +21,7 @@ install_scheduler=false
 
 # This is the netmaster IP that needs to be provided for the installation to proceed
 netmaster=""
+contiv_v2plugin_install=""
 
 usage() {
 	echo "Usage:"
@@ -34,7 +37,7 @@ error_ret() {
 	exit 1
 }
 
-while getopts ":n:a:im:d:v:s:l:t:" opt; do
+while getopts ":n:a:im:d:v:ps:l:t:" opt; do
 	case $opt in
 		n)
 			netmaster=$OPTARG
@@ -53,6 +56,9 @@ while getopts ":n:a:im:d:v:s:l:t:" opt; do
 			;;
 		v)
 			aci_image=$OPTARG
+			;;
+		p)
+			contiv_v2plugin_install=true
 			;;
 		s)
 			cluster_store=$OPTARG
@@ -92,14 +98,18 @@ if [ "$netmaster" = "" ]; then
 	usage
 fi
 
+if [ "$install_scheduler" = "true" ] && [ "$contiv_v2plugin_install" = "true" ]; then
+	echo "ERROR: -p and -i are mutually exclusive"
+	usage
+fi
+
 ansible_path=./ansible
 env_file=install/ansible/env.json
 # Verify ansible can reach all hosts
 
 echo "Verifying ansible reachability"
-ansible all $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' >&$inventory_log
-egrep 'FAIL|UNREACHABLE' $inventory_log >&/dev/null
-if [ $? -eq 0 ]; then
+ansible all -vvv $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' | tee $inventory_log
+if [ egrep 'FAIL|UNREACHABLE' $inventory_log > /dev/null ]; then
 	echo "WARNING Some of the hosts are not accessible via passwordless SSH"
 	echo " "
 	echo "This means either the host is unreachable or passwordless SSH is not"
@@ -135,10 +145,14 @@ cp /var/contiv/key.pem /ansible/roles/auth_proxy/files/
 if [ "$aci_image" != "" ]; then
 	sed -i.bak "s#.*aci_gw_image.*#\"aci_gw_image\":\"$aci_image\",#g" "$env_file"
 fi
+if [ "$contiv_v2plugin_install" == "true" ]; then
+	sed -i.bak "s#.*contiv_v2plugin_install.*#\"contiv_v2plugin_install\":\"True\",#g" "$env_file"
+fi
 
 echo "Installing Contiv"
 # Always install the base, install the scheduler stack/etcd if required
 echo '- include: install_base.yml' >$ansible_path/install_plays.yml
+
 if [ "$install_scheduler" == "true" ]; then
 	echo '- include: install_docker.yml' >>$ansible_path/install_plays.yml
 	echo '- include: install_etcd.yml' >>$ansible_path/install_plays.yml
@@ -149,8 +163,13 @@ else
 	fi
 fi
 # Install contiv & API Proxy
-echo '- include: install_contiv.yml' >>$ansible_path/install_plays.yml
-echo '- include: install_auth_proxy.yml' >>$ansible_path/install_plays.yml
+if [ "$contiv_v2plugin_install" == "true" ]; then
+	echo '- include: install_v2plugin.yml' >>$ansible_path/install_plays.yml
+	echo '- include: install_auth_proxy.yml' >>$ansible_path/install_plays.yml
+else
+	echo '- include: install_contiv.yml' >>$ansible_path/install_plays.yml
+	echo '- include: install_auth_proxy.yml' >>$ansible_path/install_plays.yml
+fi
 
 log_file_name="contiv_install_$(date -u +%m-%d-%Y.%H-%M-%S.UTC).log"
 log_file="/var/contiv/$log_file_name"
@@ -170,6 +189,8 @@ chmod 666 $inventory_log
 chmod 666 $env_file
 chmod 666 $log_file
 
+set +x
+
 if [ "$unreachable" = "" ] && [ "$failed" = "" ]; then
 	echo "Installation is complete"
 	echo "========================================================="
@@ -186,6 +207,7 @@ if [ "$unreachable" = "" ] && [ "$failed" = "" ]; then
 	echo " For example, netctl net create -t default --subnet=20.1.1.0/24 default-net"
 	echo " "
 	echo "========================================================="
+	exit 0
 else
 	echo "Installation failed"
 	echo "========================================================="

@@ -4,7 +4,14 @@
 #  BUILD_VERSION - new version being released
 #  GITHUB_USER - contiv
 #  GITHUB_TOKEN - your github token
+#  USE_RELEASE - if 0 or not set, will make a pre-release
+
 cd -P -- "$(dirname -- "$0")"
+
+# Install github-release binary if not present
+if [ -z "$(which github-release)" ]; then
+	go get -u github.com/aktau/github-release || exit 1
+fi
 
 if [ -z "$BUILD_VERSION" ]; then
 	echo "A release requires BUILD_VERSION to be defined"
@@ -19,7 +26,11 @@ fi
 if [ "$OLD_VERSION" != "none" ]; then
 	comparison="$OLD_VERSION..HEAD"
 fi
-pre_release="-p"
+
+if [ "$USE_RELEASE" != "1" ]; then
+	echo "Making a pre-release..."
+	pre_release="-p"
+fi
 
 if [ "$OLD_VERSION" != "none" ]; then
 	changelog=$(git log $comparison --oneline --no-merges --reverse)
@@ -31,9 +42,6 @@ if [ "$OLD_VERSION" != "none" ]; then
 else
 	changelog="don't forget to update the changelog"
 fi
-
-# Install github-release binary if not present
-[ -n "$(which github-release)" ] || go get -u github.com/aktau/github-release || exit 1
 
 TAR_FILENAME="contiv-"${BUILD_VERSION}".tgz"
 TAR_FILENAME2="contiv-full-"${BUILD_VERSION}".tgz"

@@ -38,7 +38,7 @@ contiv_config=""
 # Specify TLS certs to be used for API server
 tls_cert=""
 tls_key=""
-fwd_mode="bridge"
+fwd_mode="routing"
 # ACI parameters
 apic_url=""
 apic_username=""
@@ -49,6 +49,9 @@ apic_epg_bridge_domain="not_specified"
 apic_contracts_unrestricted_mode="no"
 aci_key=""
 apic_cert_dn=""
+
+infra_gateway="132.1.1.1"
+infra_subnet="132.1.1.0/24"
 
 usage() {
 	echo "Usage:"
@@ -68,6 +71,8 @@ Additional Options:
 -c   string     Configuration file for netplugin
 -t   string     Certificate to use for auth proxy https endpoint
 -k   string     Key to use for auth proxy https endpoint
+-g   string     Gateway to use for the infrastructure network
+-i   string     The subnet to use for the infrastructure network
 
 Additional Options for ACI:
 -a   string     APIC URL to use for ACI mode
@@ -82,7 +87,7 @@ Additional Options for ACI:
 
 Examples:
 
-1. Install Contiv on Kubeadm master host using the specified DNS/IP for netmaster. 
+1. Install Contiv on Kubeadm master host using the specified DNS/IP for netmaster.
 ./install/k8s/install.sh -n <netmaster DNS/IP>
 
 2. Install Contiv on Kubeadm master host using the specified DNS/IP for netmaster and specified ACI configuration.
@@ -106,7 +111,7 @@ error_ret() {
 	exit 1
 }
 
-while getopts ":s:n:v:w:c:t:k:a:u:p:l:d:e:m:y:z:o:r:" opt; do
+while getopts ":s:n:v:w:c:t:k:a:u:p:l:d:e:m:y:z:o:r:g:i" opt; do
 	case $opt in
 		s)
 			cluster_store=$OPTARG
@@ -161,6 +166,12 @@ while getopts ":s:n:v:w:c:t:k:a:u:p:l:d:e:m:y:z:o:r:" opt; do
 			;;
 		o)
 			listen_url=$OPTARG
+      ;;
+		g)
+			infra_gateway=$OPTARG
+			;;
+		i)
+			infra_subnet=$OPTARG
 			;;
 		:)
 			echo "An argument required for $OPTARG was not passed"
@@ -207,6 +218,8 @@ fi
 
 if [ "$apic_url" != "" ]; then
 	cat $contiv_aci_gw_template >>$contiv_yaml
+	# We do not support routing in ACI mode
+	fwd_mode="bridge"
 fi
 
 # We will store the ACI key in a k8s secret.
@@ -221,9 +234,10 @@ fi
 
 $kubectl create secret generic aci.key --from-file=$aci_key -n kube-system
 
+mkdir -p /var/contiv
+
 if [ "$tls_cert" = "" ]; then
 	echo "Generating local certs for Contiv Proxy"
-	mkdir -p /var/contiv
 	mkdir -p ./local_certs
 
 	chmod +x ./install/generate-certificate.sh
@@ -265,13 +279,22 @@ cp ./netctl /usr/bin/
 
 # Install Contiv
 $kubectl apply -f $contiv_yaml
-if [ "$fwd_mode" = "routing" ]; then
-	sleep 60
-	netctl --netmaster http://$listen_url global set --fwd-mode routing
-fi
 
-$kubectl get deployment/kube-dns -n kube-system -o json >kube-dns.yaml
-$kubectl delete deployment/kube-dns -n kube-system
+sleep 10
+set +e
+for i in {0..30}; do
+	netctl tenant ls >/dev/null 2>&1
+	if [ "$?" -eq "0" ]; then
+		break
+	fi
+	sleep 10
+done
+set -e
+
+if [ "$fwd_mode" == "routing" ]; then
+	netctl global set --fwd-mode $fwd_mode
+	netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
+fi
 
 echo "Installation is complete"
 echo "========================================================="
@@ -283,7 +306,9 @@ echo " netctl --netmaster http://$listen_url global set --fwd-mode routing"
 echo " Configure ACI mode (optional)"
 echo " netctl --netmaster http://$listen_url global set --fabric-mode aci --vlan-range <start>-<end>"
 echo " Create a default network"
+
 echo " netctl --netmaster http://$listen_url net create -t default --subnet=<CIDR> default-net"
-echo " For example, netctl --netmaster http://$listen_url net create -t default --subnet=20.1.1.0/24 default-net"
+echo " For example, netctl --netmaster http://$listen_url net create -t default --subnet=20.1.1.0/24  -g 20.1.1.1 default-net"
+
 echo " "
 echo "========================================================="

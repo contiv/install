@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Check if the user requested a specific build
 if [[ "$BUILD_VERSION" != "" ]]; then
 	echo $BUILD_VERSION
@@ -13,6 +12,8 @@ if [[ "$releases" != *"browser_download_url"* ]]; then
 	if [[ "$releases" != *"browser_download_url"* ]]; then
 		exit 1
 	fi
+	release=$(echo "$releases" | python -c 'import json, sys;print json.load(sys.stdin)[0]["name"]')
+else
+	release=$(echo "$releases" | python -c 'import json, sys;print json.load(sys.stdin)["name"]')
 fi
-release=$(echo "$releases" | python -c 'import json, sys;print json.load(sys.stdin)[0]["name"]')
 echo $release

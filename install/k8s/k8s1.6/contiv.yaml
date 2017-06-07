@@ -23,9 +23,15 @@ rules:
       - ""
     resources:
       - pods
-      - nodes
     verbs:
       - get
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - endpoints
+    verbs:
+      - watch
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -100,7 +106,8 @@ data:
        "K8S_CA": "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
        "K8S_KEY": "",
        "K8S_CERT": "",
-       "K8S_TOKEN": ""
+       "K8S_TOKEN": "",
+       "SVC_SUBNET": "10.96.0.0/12"
     }
 ---
 
@@ -246,6 +253,8 @@ spec:
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
       serviceAccountName: contiv-netmaster
       containers:
         - name: contiv-netmaster
@@ -261,6 +270,11 @@ spec:
                 configMapKeyRef:
                   name: contiv-config
                   key: cluster_store
+            - name: CONTIV_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: contiv-config
+                  key: config
           securityContext:
             privileged: true
           volumeMounts:
@@ -332,6 +346,8 @@ spec:
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
       serviceAccountName: contiv-netmaster
       containers:
         - name: contiv-api-proxy
