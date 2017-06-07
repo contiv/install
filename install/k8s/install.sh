@@ -223,9 +223,10 @@ fi
 
 $kubectl create secret generic aci.key --from-file=$aci_key -n kube-system
 
+mkdir -p /var/contiv
+
 if [ "$tls_cert" = "" ]; then
 	echo "Generating local certs for Contiv Proxy"
-	mkdir -p /var/contiv
 	mkdir -p ./local_certs
 
 	chmod +x ./install/generate-certificate.sh
