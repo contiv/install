@@ -145,7 +145,7 @@ else
 fi
 
 echo "Uninstalling Contiv"
-rm -rf $ansible_path/uninstall_plays.yml
+rm -f $ansible_path/uninstall_plays.yml
 
 # Uninstall contiv & API Proxy
 if [ $uninstall_v2plugin == true ]; then

@@ -147,7 +147,7 @@ fi
 echo "Installing Contiv"
 # Always install the base, install the scheduler stack/etcd if required
 
-rm -rf $ansible_path/install_plays.yml
+rm -f $ansible_path/install_plays.yml
 touch $ansible_path/install_plays.yml
 
 if [ "$install_scheduler" == "true" ]; then
