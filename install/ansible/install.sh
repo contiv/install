@@ -140,19 +140,24 @@ if [ "$aci_image" != "" ]; then
 fi
 if [ "$contiv_v2plugin_install" == "true" ]; then
 	sed -i.bak "s#.*contiv_v2plugin_install.*#\"contiv_v2plugin_install\":\"True\",#g" "$env_file"
+else
+	sed -i.bak "s#.*contiv_v2plugin_install.*#\"contiv_v2plugin_install\":\"False\",#g" "$env_file"
 fi
 
 echo "Installing Contiv"
 # Always install the base, install the scheduler stack/etcd if required
-echo '- include: install_base.yml' >$ansible_path/install_plays.yml
+
+rm -rf $ansible_path/install_plays.yml
+touch $ansible_path/install_plays.yml
 
 if [ "$install_scheduler" == "true" ]; then
+	echo '- include: install_base.yml' >$ansible_path/install_plays.yml
 	echo '- include: install_docker.yml' >>$ansible_path/install_plays.yml
 	echo '- include: install_etcd.yml' >>$ansible_path/install_plays.yml
 	echo '- include: install_scheduler.yml' >>$ansible_path/install_plays.yml
 else
 	if [ "$install_etcd" == "true" ]; then
-		echo '- include: install_etcd.yml' >>$ansible_path/install_plays.yml
+		echo '- include: install_etcd.yml' >$ansible_path/install_plays.yml
 	fi
 fi
 # Install contiv & API Proxy

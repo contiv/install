@@ -44,13 +44,16 @@ else
 fi
 
 TAR_FILENAME="contiv-"${BUILD_VERSION}".tgz"
+TAR_FILENAME2="contiv-full-"${BUILD_VERSION}".tgz"
 TAR_FILE="../release/contiv-"${BUILD_VERSION}".tgz"
-if [ ! -f ${TAR_FILE} ]; then
+TAR_FILE2="../release/contiv-full-"${BUILD_VERSION}".tgz"
+if [ ! -f ${TAR_FILE} ] || [ ! -f ${TAR_FILE2} ]; then
 	echo "release file(s) does not exist"
 	exit 1
 fi
 
 set -x
 ( (github-release -v release $pre_release -r install -t $BUILD_VERSION -d "**Changelog**<br/>$changelog") \
-	&& ( github-release -v upload -r install -t $BUILD_VERSION -n $TAR_FILENAME -f $TAR_FILE \
+	&& ( (github-release -v upload -r install -t $BUILD_VERSION -n $TAR_FILENAME -f $TAR_FILE \
+		&& github-release -v upload -r install -t $BUILD_VERSION -n $TAR_FILENAME2 -f $TAR_FILE2) \
 		|| github-release -v delete -r install -t $BUILD_VERSION)) || exit 1
