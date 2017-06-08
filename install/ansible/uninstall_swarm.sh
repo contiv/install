@@ -1,4 +1,7 @@
 #!/bin/bash
+
+set -euo pipefail
+
 # This is the uninstall script for Contiv.
 
 . ./install/ansible/install_defaults.sh
@@ -8,6 +11,7 @@ ans_opts=""
 ans_user="root"
 ans_key=$src_conf_path/insecure_private_key
 uninstall_scheduler=""
+netmaster=""
 uninstall_v2plugin=""
 reset_params=""
 
