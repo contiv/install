@@ -135,16 +135,17 @@ sed -i.bak "s/.*docker_reset_container_state.*/\"docker_reset_container_state\":
 sed -i.bak "s/.*docker_reset_image_state.*/\"docker_reset_image_state\":$reset_images,/g" $env_file
 sed -i.bak "s/.*etcd_cleanup_state.*/\"etcd_cleanup_state\":$reset,/g" $env_file
 
-sed -i.bak "s#__CLUSTER_STORE__#$cluster#g" $env_file
-
 if [ "$aci_image" != "" ]; then
 	sed -i.bak "s#.*aci_gw_image.*#\"aci_gw_image\":\"$aci_image\",#g" "$env_file"
 fi
-if [ "$contiv_v2plugin_install" == "true" ]; then
+if [ "$uninstall_v2plugin" == "true" ]; then
 	sed -i.bak "s#.*contiv_v2plugin_install.*#\"contiv_v2plugin_install\":\"True\",#g" "$env_file"
+else
+	sed -i.bak "s#.*contiv_v2plugin_install.*#\"contiv_v2plugin_install\":\"False\",#g" "$env_file"
 fi
 
 echo "Uninstalling Contiv"
+rm -f $ansible_path/uninstall_plays.yml
 
 # Uninstall contiv & API Proxy
 if [ $uninstall_v2plugin == true ]; then

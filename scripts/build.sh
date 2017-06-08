@@ -13,7 +13,7 @@ fi
 DEV_IMAGE_NAME="devbuild"
 VERSION=${BUILD_VERSION-$DEV_IMAGE_NAME}
 
-contiv_version=${CONTIV_VERSION:-"1.0.0"}
+contiv_version=${CONTIV_VERSION:-"1.0.3"}
 
 aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
 ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$contiv_version}
@@ -26,7 +26,7 @@ etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
 # because of this, the default value for this variable will become the latest
 # version that is available in the Docker Store and should be considered
 # independent of $contiv_version above.
-v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.0.0"}
+v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.0.3"}
 
 function usage() {
 	echo "Usage:"
@@ -126,7 +126,32 @@ mkdir -p $binary_cache
 # Create the minimal tar bundle
 tar czf $tmp_output_file -C $release_dir contiv-$VERSION
 
+# Save the auth proxy & aci-gw images for packaging the full docker images with contiv install binaries
+if [ "$(docker images -q contiv/auth_proxy:$auth_proxy_version 2>/dev/null)" == "" ]; then
+	docker pull contiv/auth_proxy:$auth_proxy_version
+fi
+proxy_image=$(docker images -q contiv/auth_proxy:$auth_proxy_version)
+docker save $proxy_image -o $binary_cache/auth-proxy-image.tar
+
+if [ "$(docker images -q contiv/aci-gw:$aci_gw_version 2>/dev/null)" == "" ]; then
+	docker pull contiv/aci-gw:$aci_gw_version
+fi
+aci_image=$(docker images -q contiv/aci-gw:$aci_gw_version)
+docker save $aci_image -o $binary_cache/aci-gw-image.tar
+curl -sL -o $binary_cache/openvswitch-2.5.0-2.el7.x86_64.rpm http://cbs.centos.org/kojifiles/packages/openvswitch/2.5.0/2.el7/x86_64/openvswitch-2.5.0-2.el7.x86_64.rpm
+curl -sL -o $binary_cache/ovs-common.deb http://mirrors.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-common_2.5.2-0ubuntu0.16.04.1_amd64.deb
+curl -sL -o $binary_cache/ovs-switch.deb http://mirrors.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-switch_2.5.2-0ubuntu0.16.04.1_amd64.deb
+curl -sL -o $binary_cache/netplugin-$contiv_version.tar.bz2 https://github.com/contiv/netplugin/releases/download/$contiv_version/netplugin-$contiv_version.tar.bz2
+
+env_file=$output_dir/install/ansible/env.json
+sed -i.bak "s#.*auth_proxy_local_install.*#  \"auth_proxy_local_install\": True,#g" $env_file
+sed -i.bak "s#.*contiv_network_local_install.*#  \"contiv_network_local_install\": True,#g" $env_file
+
+# Create the full tar bundle
+tar czf $tmp_full_output_file -C $release_dir contiv-$VERSION
+
 mv $tmp_output_file $output_file
+mv $tmp_full_output_file $full_output_file
 rm -rf $output_dir
 
 echo "Success: Contiv Installer version $VERSION is available at $output_file"
