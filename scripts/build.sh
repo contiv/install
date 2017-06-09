@@ -14,7 +14,7 @@ DEV_IMAGE_NAME="devbuild"
 VERSION=${BUILD_VERSION-$DEV_IMAGE_NAME}
 
 contiv_version=${CONTIV_VERSION:-"1.0.3"}
-
+pull_images=${CONTIV_CI_HOST:-"false"}
 aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
 ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$contiv_version}
 auth_proxy_version=${CONTIV_API_PROXY_VERSION:-$contiv_version}
@@ -127,13 +127,13 @@ mkdir -p $binary_cache
 tar czf $tmp_output_file -C $release_dir contiv-$VERSION
 
 # Save the auth proxy & aci-gw images for packaging the full docker images with contiv install binaries
-if [ "$(docker images -q contiv/auth_proxy:$auth_proxy_version 2>/dev/null)" == "" ]; then
+if [[ "$(docker images -q contiv/auth_proxy:$auth_proxy_version 2>/dev/null)" == "" || "$pull_images" == "true" ]]; then
 	docker pull contiv/auth_proxy:$auth_proxy_version
 fi
 proxy_image=$(docker images -q contiv/auth_proxy:$auth_proxy_version)
 docker save $proxy_image -o $binary_cache/auth-proxy-image.tar
 
-if [ "$(docker images -q contiv/aci-gw:$aci_gw_version 2>/dev/null)" == "" ]; then
+if [[ "$(docker images -q contiv/aci-gw:$aci_gw_version 2>/dev/null)" == "" || "$pull_images" == "true" ]]; then
 	docker pull contiv/aci-gw:$aci_gw_version
 fi
 aci_image=$(docker images -q contiv/aci-gw:$aci_gw_version)
