@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # This is the installation script for Contiv.
 
 . ./install/ansible/install_defaults.sh
@@ -9,6 +11,9 @@ ans_opts=""
 ans_user="root"
 ans_key=$src_conf_path/insecure_private_key
 install_scheduler=""
+netmaster=""
+v2plugin_param=""
+contiv_v2plugin_install=""
 
 # Check for docker
 

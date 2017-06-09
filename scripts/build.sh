@@ -13,14 +13,20 @@ fi
 DEV_IMAGE_NAME="devbuild"
 VERSION=${BUILD_VERSION-$DEV_IMAGE_NAME}
 
-contiv_version=${CONTIV_VERSION:-"1.0.2"}
-
+contiv_version=${CONTIV_VERSION:-"1.0.3"}
+pull_images=${CONTIV_CI_HOST:-"false"}
 aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
 ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$contiv_version}
 auth_proxy_version=${CONTIV_API_PROXY_VERSION:-$contiv_version}
-v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.0.2"}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
 etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
+
+# the installer currently pulls the v2plugin image directly from Docker Hub, but
+# this will change to being downloaded from the Docker Store in the future.
+# because of this, the default value for this variable will become the latest
+# version that is available in the Docker Store and should be considered
+# independent of $contiv_version above.
+v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.0.3"}
 
 function usage() {
 	echo "Usage:"
@@ -121,13 +127,13 @@ mkdir -p $binary_cache
 tar czf $tmp_output_file -C $release_dir contiv-$VERSION
 
 # Save the auth proxy & aci-gw images for packaging the full docker images with contiv install binaries
-if [ "$(docker images -q contiv/auth_proxy:$auth_proxy_version 2>/dev/null)" == "" ]; then
+if [[ "$(docker images -q contiv/auth_proxy:$auth_proxy_version 2>/dev/null)" == "" || "$pull_images" == "true" ]]; then
 	docker pull contiv/auth_proxy:$auth_proxy_version
 fi
 proxy_image=$(docker images -q contiv/auth_proxy:$auth_proxy_version)
 docker save $proxy_image -o $binary_cache/auth-proxy-image.tar
 
-if [ "$(docker images -q contiv/aci-gw:$aci_gw_version 2>/dev/null)" == "" ]; then
+if [[ "$(docker images -q contiv/aci-gw:$aci_gw_version 2>/dev/null)" == "" || "$pull_images" == "true" ]]; then
 	docker pull contiv/aci-gw:$aci_gw_version
 fi
 aci_image=$(docker images -q contiv/aci-gw:$aci_gw_version)
@@ -139,7 +145,7 @@ curl -sL -o $binary_cache/netplugin-$contiv_version.tar.bz2 https://github.com/c
 
 env_file=$output_dir/install/ansible/env.json
 sed -i.bak "s#.*auth_proxy_local_install.*#  \"auth_proxy_local_install\": True,#g" $env_file
-sed -i.bak "s#.*contiv_network_local_install.*#  \"contiv_network_local_install\": True#g" $env_file
+sed -i.bak "s#.*contiv_network_local_install.*#  \"contiv_network_local_install\": True,#g" $env_file
 
 # Create the full tar bundle
 tar czf $tmp_full_output_file -C $release_dir contiv-$VERSION
