@@ -4,32 +4,55 @@ require 'rubygems'
 require 'fileutils'
 require 'yaml'
 
-DEFAULT_K8S_VERSION = 'v1.4.7'.freeze
+DEFAULT_K8S_VERSION = 'v1.6.4'.freeze
+
+# Guest OS versions for testing
 UBUNTU = 'ubuntu'.freeze
 CENTOS = 'centos'.freeze
 RHEL = 'rhel7'.freeze
 
+HOST_SHARED_FOLDER = './export/'.freeze
+# Different orchestration platforms we support
+ORC_LEGACY_SWARM = 'legacy-swarm'.freeze
+ORC_SWARM = 'swarm-mode'.freeze
+ORC_KUBEADM = 'kubeadm'.freeze
+ORC_KUBEADM_IDX = 2
+
+# Global vars
 token = 'd900e1.8a392798f13b33a4'
 node_os = ENV['CONTIV_NODE_OS'] || CENTOS
+orc = ENV['CONTIV_ORC'] || ORC_LEGACY_SWARM
+k8s_ver = ENV['CONTIV_K8S_VERSION'] || DEFAULT_K8S_VERSION
+orc_path = case k8s_ver
+           when /^v1\.[45]\./ then 'k8s1.4/'
+           when /^v1\.6\./    then 'k8s1.6/'
+           else
+             raise "unsupported k8s version: #{k8s_ver}"
+           end
+
+swarm_path = 'docker17/'
+orchestrators = [ORC_LEGACY_SWARM, ORC_SWARM, ORC_KUBEADM]
 
 # method to create an etc_hosts file based on the cluster info
-def create_etc_hosts(num_nodes, base_ip, start)
-  master_ip = base_ip + start.to_s
+def create_etc_hosts(node_names, node_ips, o)
+  master_ip = node_ips[0]
   hosts = "127.0.0.1   localhost\n"
   hosts << "#{master_ip}   netmaster\n"
-  hosts = (0..num_nodes).inject(hosts) { |acc, elem| acc << base_ip + "#{elem + start} contiv-node#{elem + 1} \n" }
 
-  etc_file = (ENV['VAGRANT_CWD'] || '.') + '/.etc_hosts'
+  node_names.zip(node_ips).each do |node, ip|
+    hosts << "#{ip}   #{node} \n"
+  end
+
+  etc_file = (ENV['VAGRANT_CWD'] || '.') + '/.etc_hosts_' + o
   File.write(etc_file, hosts)
-  master_ip
 end
 
 # method to create an cfg file based on the cluster info
-def create_cfg_info(num_nodes, node_ips)
+# This cfg file is used for ansible installations
+def create_cfg_info(node_ips, o)
   node_os = ENV['CONTIV_NODE_OS'] || CENTOS
   conn = {}
-  num_nodes.times do |n|
-    node_ip = node_ips[n]
+  node_ips.each_with_index do |node_ip, n|
     node = if n.zero?
              { 'role' => 'master' }
            else
@@ -42,7 +65,7 @@ def create_cfg_info(num_nodes, node_ips)
     conn[node_ip] = node
   end
   cfg_data = { 'CONNECTION_INFO' => conn }
-  cfg_file = (ENV['VAGRANT_CWD'] || '.') + '/.cfg.yml'
+  cfg_file = (ENV['VAGRANT_CWD'] || '.') + '/.cfg_' + o + '.yaml'
   File.write(cfg_file, cfg_data.to_yaml)
 end
 
@@ -53,7 +76,7 @@ echo "export https_proxy='$2'" >> ~/.profile
 source /etc/profile.d/envvar.sh
 SCRIPT
 
-provision_net = <<SCRIPT
+provision_net_ubuntu = <<SCRIPT
 sudo yum install -y net-tools
 cat <<EOF > /etc/hosts
 $1
@@ -61,7 +84,7 @@ EOF
 ifup eth1
 SCRIPT
 
-provision_etc_hosts = <<SCRIPT
+provision_net_centos = <<SCRIPT
 cat <<EOF > /etc/hosts
 $1
 EOF
@@ -75,36 +98,70 @@ $1
 EOF
 SCRIPT
 
-# begin execution here
+# Begin execution here
 num_nodes = ENV['CONTIV_NODES'] ? ENV['CONTIV_NODES'].to_i : 2
+num_workers = num_nodes - 1
 base_ip = ENV['CONTIV_IP_PREFIX'] || '192.168.2.'
-start = ENV['CONTIV_KUBEADM'] ? 50 : 50 + num_nodes
-name_start = ENV['CONTIV_KUBEADM'] ? 1 : 1 + num_nodes
-node_ips = Array.new(num_nodes) { |n| base_ip + (n + start).to_s }
-node_names = Array.new(num_nodes) { |n| "contiv-node#{n + name_start}" }
+ip = 50
 
-master_ip = create_etc_hosts(num_nodes, base_ip, start)
-create_cfg_info(num_nodes, node_ips)
+# This configuration creates the configuration for all the VMs
+# So we have num_nodes * orchestrators.size VMs that will be listed in
+# vagrant status etc. All the VMs are marked autostart: false, so
+# they have to be started explicitly using vagrant up <vm name>
+# node_names are like kubeadm-master, kubeadm-worker0 etc for each
+# orchestrator.
+node_names = []
+node_ips = []
+node_orcs = []
+master_ips = []
+
+orchestrators.each do |o|
+  # Save the start location in IP array
+  start = node_ips.length
+
+  node_names.push(o + '-master')
+  num_workers.times do |n|
+    node_names.push("#{o}-worker#{n}")
+  end
+  master_ips.push("#{base_ip}#{ip}")
+  num_nodes.times do
+    node_ips.push("#{base_ip}#{ip}")
+    node_orcs.push(o)
+    ip += 1
+  end
+
+  create_etc_hosts(node_names[start, num_nodes], node_ips[start, num_nodes], o)
+  create_cfg_info(node_ips[start, num_nodes], o)
+end
+
+# Check for plugin pre-reqs.
+# We need vagrant registration plugin to register redhat boxes.
+if node_os == RHEL
+  unless Vagrant.has_plugin?('vagrant-registration')
+    raise 'vagrant-registration plugin is not installed!'
+  end
+end
 
 VAGRANTFILE_API_VERSION = '2'.freeze
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box_check_update = false
   config.vbguest.auto_update = false if Vagrant.has_plugin?('vagrant-vbguest')
+
   if node_os == RHEL
     config.registration.manager = 'subscription_manager'
     config.registration.username = ENV['CONTIV_RHEL_USER']
     config.registration.password = ENV['CONTIV_RHEL_PASSWD']
   end
+  config.vm.provider 'virtualbox' do |v|
+    v.linked_clone = true if Vagrant::VERSION >= '1.8'
+  end
 
-  num_nodes.times do |n|
+  (num_nodes * orchestrators.size).times do |n|
     node_name = node_names[n]
     node_addr = node_ips[n]
+    node_orc = node_orcs[n]
 
-    config.vm.provider 'virtualbox' do |v|
-      v.linked_clone = true if Vagrant::VERSION >= '1.8'
-    end
-
-    config.vm.define vm_name = node_name do |c|
+    config.vm.define node_name, autostart: false do |c|
       if node_os == RHEL
         # Download rhel7.2 box from https://access.redhat.com/downloads/content/293/ver=2/rhel---7/2.0.0/x86_64/product-software
         # Add it as rhel7 vagrant box add rhel-cdk-kubernetes-7.2-29.x86_64.vagrant-virtualbox.box --name=rhel7
@@ -118,29 +175,36 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       elsif node_os == UBUNTU
         c.vm.box = 'ubuntu/xenial64'
       else
-        c.vm.box = 'centos/7'
+        if node_orc == ORC_SWARM
+          config.vm.box = 'contiv/centos73'
+          config.vm.box_version = '0.10.1'
+        else
+          config.vm.box = 'centos/7'
+        end
         config.ssh.insert_key = false
       end
+
       c.vm.provision 'shell' do |s|
         s.inline = provision_node
         s.args = [ENV['http_proxy'] || '', ENV['https_proxy'] || '']
       end
+      if node_orc == ORC_SWARM
+        config.vm.synced_folder HOST_SHARED_FOLDER, '/shared', create: true
+      end
       c.vm.provision 'shell' do |s|
-        s.inline = node_os == UBUNTU ? provision_etc_hosts : provision_net
-        etc_file = (ENV['VAGRANT_CWD'] || '.') + '/.etc_hosts'
+        s.inline = node_os == UBUNTU ? provision_net_centos : provision_net_ubuntu
+        etc_file = (ENV['VAGRANT_CWD'] || '.') + '/.etc_hosts_' + node_orc
         hosts = File.read(etc_file)
         s.args = [hosts]
       end
 
       # configure ip address etc
-      c.vm.hostname = vm_name
+      c.vm.hostname = node_name
       c.vm.network :private_network, ip: node_addr
       c.vm.network :private_network, ip: node_addr, virtualbox__intnet: 'true', auto_config: false
-      if n.zero?
-        c.vm.network 'forwarded_port', guest: 10_000, host: 10_005 + node_addr.split('.')[3].to_i
-      end
+
       c.vm.provider 'virtualbox' do |v|
-        v.memory = ENV['CONTIV_KUBEADM'] && n.zero? ? 2048 : 1024
+        v.memory = node_orc == ORC_KUBEADM && master_ips.include?(node_addr) ? 2048 : 512
         # make all nics 'virtio' to take benefit of builtin vlan tag
         # support, which otherwise needs to be enabled in Intel drivers,
         # which are used by default by virtualbox
@@ -159,30 +223,43 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           s.args = [key]
         end
       end
-      if ENV['CONTIV_KUBEADM']
-        k8s_ver = ENV['CONTIV_K8S_VERSION'] || DEFAULT_K8S_VERSION
-        k8s_path = k8s_ver.include?('1.5.') || k8s_ver.include?('1.4.') ? 'k8s1.4/' : 'k8s1.6/'
+      if node_orc != ORC_KUBEADM && node_os != UBUNTU
+        c.vm.provision :shell, inline: 'yum install policycoreutils-python -y'
+      end
+
+      if node_orc == ORC_KUBEADM
+        # kubeadm specific bootstrap tasks
         if node_os == RHEL
           c.vm.provision 'shell', inline: <<-EOS
             yum remove -y kubernetes-node-*
             yum remove -y kubernetes-client-*
             EOS
-        end
-        if node_os == UBUNTU
-          c.vm.provision :shell, path: k8s_path + 'bootstrap_ubuntu.sh'
+        elsif node_os == UBUNTU
+          c.vm.provision :shell, path: orc_path + 'bootstrap_ubuntu.sh'
         else
-          c.vm.provision :shell, path: k8s_path + 'bootstrap_centos.sh'
-          c.vm.provision 'shell', inline: 'sudo setenforce 0'
+          c.vm.provision :shell, path: orc_path + 'bootstrap_centos.sh'
         end
-        if n.zero?
+        if master_ips.include? node_addr
           # Install kubernetes on master
-          c.vm.provision :shell, path: k8s_path + 'k8smaster.sh', args: [token, node_addr, k8s_ver]
+          c.vm.provision :shell, path: orc_path + 'k8smaster.sh', args: [token, node_addr, k8s_ver, 'vagrant']
         else
           # Install kubernetes on nodes
-          c.vm.provision :shell, path: k8s_path + 'k8sworker.sh', args: [token, master_ip]
+          c.vm.provision :shell, path: orc_path + 'k8sworker.sh', args: [token, master_ips[ORC_KUBEADM_IDX]]
         end # if
-      elsif node_os != UBUNTU
-        c.vm.provision :shell, inline: 'yum install policycoreutils-python -y'
+      elsif node_orc == ORC_SWARM
+        # swarm specific bootstrap tasks
+        if node_os == CENTOS
+          c.vm.provision :shell, path: swarm_path + 'bootstrap_centos.sh'
+          if master_ips.include? node_addr
+            # Start swarm on master
+            c.vm.provision :shell, path: swarm_path + 'master.sh', args: [node_addr]
+          else
+            # Run the generated swarm join command line from worker
+            c.vm.provision :shell, path: HOST_SHARED_FOLDER + 'worker.sh'
+          end
+        else
+          raise 'Swarm install is currently supported only on CentOS'
+        end
       end
     end # c
   end # role
