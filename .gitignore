@@ -1,6 +1,7 @@
 # vagrant data directories
 cluster/.vagrant
-cluster/.etc_hosts
-cluster/.cfg.yml
+cluster/export
+cluster/.etc_hosts*
+cluster/.cfg*
 cluster/*.log
 release
