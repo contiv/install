@@ -60,7 +60,7 @@ demo-kubeadm:
 # Or run make as BUILD_VERSION=1.0.0-beta.3 make demo-k8s
 demo-legacy-swarm:
 	BUILD_VERSION=$(rel_ver) make cluster-legacy-swarm
-	BUILD_VERSION=$(rel_ver) make install-test-swarm
+	BUILD_VERSION=$(rel_ver) make install-test-legacy-swarm
 
 vagrant-clean:
 	vagrant global-status --prune
