@@ -2,6 +2,7 @@
 
 import json
 import requests
+import sys
 
 HTTP_OK = 200
 # Try to get the latest release version
