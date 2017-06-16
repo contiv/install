@@ -28,12 +28,10 @@ yum -y install docker-ce
 usermod -aG docker $SUDO_USER
 
 # add /etc/docker/ if it doesn't exist
-if [ ! -d /etc/docker ]; then
-    mkdir /etc/docker
-fi
+mkdir -p /etc/docker
 
 # add (and create) daemon.json with entry for storage-device
-    cat <<EOT >> /etc/docker/daemon.json
+cat <<EOT >> /etc/docker/daemon.json
 {
   "storage-driver": "devicemapper"
 }
@@ -45,6 +43,6 @@ systemctl start docker
 
 # TODO: REMOVE THIS ONCE THE Contiv Installer DOES THIS
 # make sure /etc/openvswitch exists
-if [ ! -d /etc/openvswitch ]; then
-    mkdir /etc/openvswitch
-fi
+mkdir -p /etc/openvswitch
+
+exit 0
