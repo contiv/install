@@ -12,6 +12,7 @@ CENTOS = 'centos'.freeze
 RHEL = 'rhel7'.freeze
 
 HOST_SHARED_FOLDER = './export/'.freeze
+GUEST_SHARED_FOLDER = '/shared'.freeze
 # Different orchestration platforms we support
 ORC_LEGACY_SWARM = 'legacy-swarm'.freeze
 ORC_SWARM = 'swarm-mode'.freeze
@@ -21,7 +22,6 @@ ORC_KUBEADM_IDX = 2
 # Global vars
 token = 'd900e1.8a392798f13b33a4'
 node_os = ENV['CONTIV_NODE_OS'] || CENTOS
-orc = ENV['CONTIV_ORC'] || ORC_LEGACY_SWARM
 k8s_ver = ENV['CONTIV_K8S_VERSION'] || DEFAULT_K8S_VERSION
 orc_path = case k8s_ver
            when /^v1\.[45]\./ then 'k8s1.4/'
@@ -189,7 +189,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         s.args = [ENV['http_proxy'] || '', ENV['https_proxy'] || '']
       end
       if node_orc == ORC_SWARM
-        config.vm.synced_folder HOST_SHARED_FOLDER, '/shared', create: true
+        config.vm.synced_folder HOST_SHARED_FOLDER, GUEST_SHARED_FOLDER, create: true
       end
       c.vm.provision 'shell' do |s|
         s.inline = node_os == UBUNTU ? provision_net_centos : provision_net_ubuntu
@@ -252,7 +252,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           c.vm.provision :shell, path: swarm_path + 'bootstrap_centos.sh'
           if master_ips.include? node_addr
             # Start swarm on master
-            c.vm.provision :shell, path: swarm_path + 'master.sh', args: [node_addr]
+            c.vm.provision :shell, path: swarm_path + 'master.sh', args: [node_addr, GUEST_SHARED_FOLDER]
           else
             # Run the generated swarm join command line from worker
             c.vm.provision :shell, path: HOST_SHARED_FOLDER + 'worker.sh'

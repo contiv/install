@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -xeuo pipefail
+set -euo pipefail
 # This scripts runs in a container with ansible installed.
 . ./install/ansible/install_defaults.sh
 
