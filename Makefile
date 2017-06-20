@@ -15,25 +15,24 @@ ansible-image:
 	@bash ./scripts/build_image.sh
 
 # Brings up a demo cluster to install Contiv on with docker, centos.
-cluster-legacy-swarm: 
-	cd cluster && vagrant destroy -f && \
+cluster-legacy-swarm: vagrant-clean
+	cd cluster && \
 	vagrant up legacy-swarm-master && \
 	vagrant up legacy-swarm-worker0
 
 # Brings up a demo cluster to install Contiv on with swarm, centos.
-cluster-swarm-mode: 	
-	cd cluster && vagrant destroy -f && \
+cluster-swarm-mode: vagrant-clean	
+	cd cluster && \
 	vagrant up swarm-mode-master && \
 	vagrant up swarm-mode-worker0
 
 # Brings up a demo cluster to install Contiv on with kubeadm, centos.
-cluster-kubeadm: 
-	cd cluster && vagrant destroy -f && \
+cluster-kubeadm: vagrant-clean
+	cd cluster && \
 	vagrant up kubeadm-master && \
 	vagrant up kubeadm-worker0
 
-cluster-destroy:
-	cd cluster && vagrant destroy -f
+cluster-destroy: vagrant-clean
 
 # demo-swarm-mode brings up a cluster with native docker swarm, runs the installer on it, and shows the URL
 # of the demo Contiv Admin Console which was set up
@@ -63,9 +62,9 @@ demo-legacy-swarm:
 	BUILD_VERSION=$(rel_ver) make install-test-legacy-swarm
 
 vagrant-clean:
-	vagrant global-status --prune
 	cd cluster && vagrant destroy -f
-
+	@bash ./scripts/vbcleanup.sh
+	
 # Create a build and test the release installation on a vagrant cluster
 # TODO: The vagrant part of this can be optimized by taking snapshots instead
 # of creating a new set of VMs for each case

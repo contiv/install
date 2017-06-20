@@ -28,6 +28,6 @@ fi
 if systemctl -q is-enabled firewalld; then
 	systemctl disable firewalld
 fi
-usermod -a -G docker vagrant
+usermod -a -G docker $SUDO_USER
 
 exit 0
