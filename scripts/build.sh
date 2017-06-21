@@ -13,7 +13,7 @@ fi
 DEV_IMAGE_NAME="devbuild"
 VERSION=${BUILD_VERSION-$DEV_IMAGE_NAME}
 
-contiv_version=${CONTIV_VERSION:-"1.0.3"}
+contiv_version=${CONTIV_VERSION:-"1.1.0-rc.1"}
 pull_images=${CONTIV_CI_HOST:-"false"}
 aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
 ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$contiv_version}
