@@ -9,6 +9,8 @@ fi
 
 setenforce 0
 
+yum install -y bzip2
+
 yum install -y ntp
 systemctl enable ntpd && systemctl start ntpd
 
