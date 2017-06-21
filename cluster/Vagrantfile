@@ -142,6 +142,26 @@ if node_os == RHEL
   end
 end
 
+# ensure that ipv4 forwarding is enabled if we're on Linux
+forward_file = "/proc/sys/net/ipv4/ip_forward"
+
+if File.exists?(forward_file) && File.read(forward_file).strip == "0"
+  puts "Please enable ipv4 forwarding by running the following command:"
+  puts "    sudo sysctl -w net.ipv4.ip_forward=1"
+
+  exit 1
+end
+
+# show a warning that the FORWARD chain policy must be set to ACCEPT on Debian/Ubuntu
+# systems since they default to REJECT.  we can't check the actual value because root
+# access is required.
+if ARGV[0] == "up" && File.exists?("/etc/debian_version")
+  puts
+  puts "NOTE: Please ensure that the FORWARD chain's policy is set to ACCEPT"
+  puts "      by running: sudo iptables -P FORWARD ACCEPT"
+  puts
+end
+
 VAGRANTFILE_API_VERSION = '2'.freeze
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box_check_update = false
