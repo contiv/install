@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-num_nodes=${CONTIV_NODES-2}
-num_masters=${CONTIV_MASTERS-1}
+num_nodes=${CONTIV_NODES:-2}
+num_masters=${CONTIV_MASTERS:-1}
 ((num_workers = $num_nodes - $num_masters))
 
 orc=$1
