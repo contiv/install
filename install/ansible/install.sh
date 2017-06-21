@@ -125,10 +125,11 @@ if [ "$service_vip" == "" ]; then
 fi
 
 if [ "$cluster_store" == "" ]; then
-	cluster_store="etcd://$service_vip:2379"
+	cluster_store="etcd://localhost:2379"
 fi
 
 sed -i.bak "s#.*service_vip.*#\"service_vip\":\"$service_vip\",#g" "$env_file"
+sed -i.bak "s#.*netctl_url.*#\"netctl_url\":\"http://$service_vip:9999\",#g" "$env_file"
 sed -i.bak "s#.*cluster_store.*#\"cluster_store\":\"$cluster_store\",#g" "$env_file"
 
 # Copy certs
@@ -163,13 +164,8 @@ else
 	fi
 fi
 # Install contiv & API Proxy
-if [ "$contiv_v2plugin_install" == "true" ]; then
-	echo '- include: install_v2plugin.yml' >>$ansible_path/install_plays.yml
-	echo '- include: install_auth_proxy.yml' >>$ansible_path/install_plays.yml
-else
-	echo '- include: install_contiv.yml' >>$ansible_path/install_plays.yml
-	echo '- include: install_auth_proxy.yml' >>$ansible_path/install_plays.yml
-fi
+echo '- include: install_contiv.yml' >>$ansible_path/install_plays.yml
+echo '- include: install_auth_proxy.yml' >>$ansible_path/install_plays.yml
 
 log_file_name="contiv_install_$(date -u +%m-%d-%Y.%H-%M-%S.UTC).log"
 log_file="/var/contiv/$log_file_name"
