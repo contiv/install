@@ -16,15 +16,11 @@ ansible-image:
 
 # Brings up a demo cluster to install Contiv on with docker, centos.
 cluster-legacy-swarm: vagrant-clean
-	cd cluster && \
-	vagrant up legacy-swarm-master && \
-	vagrant up legacy-swarm-worker0
+	@bash ./scripts/vagrantup.sh legacy-swarm
 
 # Brings up a demo cluster to install Contiv on with swarm, centos.
 cluster-swarm-mode: vagrant-clean	
-	cd cluster && \
-	vagrant up swarm-mode-master && \
-	vagrant up swarm-mode-worker0
+	@bash ./scripts/vagrantup.sh swarm-mode
 
 # Brings up a demo cluster to install Contiv on with kubeadm, centos.
 cluster-kubeadm: vagrant-clean

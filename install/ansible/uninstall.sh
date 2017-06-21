@@ -148,13 +148,8 @@ echo "Uninstalling Contiv"
 rm -f $ansible_path/uninstall_plays.yml
 
 # Uninstall contiv & API Proxy
-if [ $uninstall_v2plugin == true ]; then
-	echo '- include: uninstall_auth_proxy.yml' >$ansible_path/uninstall_plays.yml
-	echo '- include: uninstall_v2plugin.yml' >>$ansible_path/uninstall_plays.yml
-else
-	echo '- include: uninstall_auth_proxy.yml' >$ansible_path/uninstall_plays.yml
-	echo '- include: uninstall_contiv.yml' >>$ansible_path/uninstall_plays.yml
-fi
+echo '- include: uninstall_auth_proxy.yml' >$ansible_path/uninstall_plays.yml
+echo '- include: uninstall_contiv.yml' >>$ansible_path/uninstall_plays.yml
 
 if [ $uninstall_scheduler == true ]; then
 	echo '- include: uninstall_scheduler.yml' >>$ansible_path/uninstall_plays.yml

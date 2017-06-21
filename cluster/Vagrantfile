@@ -4,7 +4,7 @@ require 'rubygems'
 require 'fileutils'
 require 'yaml'
 
-DEFAULT_K8S_VERSION = 'v1.6.4'.freeze
+DEFAULT_K8S_VERSION = 'v1.6.5'.freeze
 
 # Guest OS versions for testing
 UBUNTU = 'ubuntu'.freeze
@@ -18,6 +18,11 @@ ORC_LEGACY_SWARM = 'legacy-swarm'.freeze
 ORC_SWARM = 'swarm-mode'.freeze
 ORC_KUBEADM = 'kubeadm'.freeze
 ORC_KUBEADM_IDX = 2
+
+num_nodes = (ENV["CONTIV_NODES"] || 2).to_i
+num_masters = (ENV["CONTIV_MASTERS"] || 1).to_i
+num_workers = num_nodes - num_masters
+
 
 # Global vars
 token = 'd900e1.8a392798f13b33a4'
@@ -37,7 +42,6 @@ orchestrators = [ORC_LEGACY_SWARM, ORC_SWARM, ORC_KUBEADM]
 def create_etc_hosts(node_names, node_ips, o)
   master_ip = node_ips[0]
   hosts = "127.0.0.1   localhost\n"
-  hosts << "#{master_ip}   netmaster\n"
 
   node_names.zip(node_ips).each do |node, ip|
     hosts << "#{ip}   #{node} \n"
@@ -49,11 +53,11 @@ end
 
 # method to create an cfg file based on the cluster info
 # This cfg file is used for ansible installations
-def create_cfg_info(node_ips, o)
+def create_cfg_info(node_ips, o, masters)
   node_os = ENV['CONTIV_NODE_OS'] || CENTOS
   conn = {}
   node_ips.each_with_index do |node_ip, n|
-    node = if n.zero?
+    node = if n < masters
              { 'role' => 'master' }
            else
              {}
@@ -99,11 +103,8 @@ EOF
 SCRIPT
 
 # Begin execution here
-num_nodes = ENV['CONTIV_NODES'] ? ENV['CONTIV_NODES'].to_i : 2
-num_workers = num_nodes - 1
 base_ip = ENV['CONTIV_IP_PREFIX'] || '192.168.2.'
 ip = 50
-
 # This configuration creates the configuration for all the VMs
 # So we have num_nodes * orchestrators.size VMs that will be listed in
 # vagrant status etc. All the VMs are marked autostart: false, so
@@ -119,7 +120,13 @@ orchestrators.each do |o|
   # Save the start location in IP array
   start = node_ips.length
 
-  node_names.push(o + '-master')
+  num_masters.times do |n|
+    if n.zero?
+       node_names.push("#{o}-master")
+    else
+       node_names.push("#{o}-master#{n}")
+    end
+  end
   num_workers.times do |n|
     node_names.push("#{o}-worker#{n}")
   end
@@ -131,7 +138,7 @@ orchestrators.each do |o|
   end
 
   create_etc_hosts(node_names[start, num_nodes], node_ips[start, num_nodes], o)
-  create_cfg_info(node_ips[start, num_nodes], o)
+  create_cfg_info(node_ips[start, num_nodes], o, num_masters)
 end
 
 # Check for plugin pre-reqs.
