@@ -284,8 +284,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             # Run the generated swarm join command line from worker
             c.vm.provision :shell, path: HOST_SHARED_FOLDER + 'worker.sh'
           end
-        else
-          raise 'Swarm install is currently supported only on CentOS'
         end
       end
     end # c

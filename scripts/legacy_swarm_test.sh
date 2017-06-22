@@ -34,7 +34,7 @@ fi
 
 tar oxf $install_version.tgz
 cd $install_version
-./install/ansible/install_swarm.sh -f ../../cluster/.cfg_legacy-swarm.yaml -e $ssh_key -u $user -i
+./install/ansible/install_swarm.sh -f ../../cluster/.cfg_legacy-swarm.yaml -e $ssh_key -u $user -i -l ":9999" -t ":9999"
 
 # Wait for CONTIV to start for up to 10 minutes
 sleep 10

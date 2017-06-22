@@ -13,6 +13,7 @@ scheduler_provider=${CONTIV_SCHEDULER_PROVIDER:-"native-swarm"}
 # Specify the etcd or cluster store here
 # If an etcd or consul cluster store is not provided, we will start an etcd instance
 cluster_store=""
+uninstall_etcd=true
 
 # Should the scheduler stack (docker swarm or k8s be uninstalled)
 uninstall_scheduler=false
@@ -63,6 +64,7 @@ while getopts ":n:a:ipm:d:v:rgs:" opt; do
 			;;
 		s)
 			cluster_store=$OPTARG
+			uninstall_etcd=false
 			;;
 		r)
 			reset="true"
@@ -125,7 +127,7 @@ if [ "$service_vip" == "" ]; then
 	service_vip=$netmaster
 fi
 if [ "$cluster_store" == "" ]; then
-	cluster_store="etcd://$service_vip:2379"
+	cluster_store="etcd://localhost:2379"
 fi
 
 sed -i.bak "s#.*service_vip.*#\"service_vip\":\"$service_vip\",#g" "$env_file"
@@ -156,7 +158,7 @@ if [ $uninstall_scheduler == true ]; then
 	echo '- include: uninstall_etcd.yml' >>$ansible_path/uninstall_plays.yml
 	echo '- include: uninstall_docker.yml' >>$ansible_path/uninstall_plays.yml
 else
-	if [ "$cluster_store" == "" ]; then
+	if [ "$uninstall_etcd" == "true" ]; then
 		echo '- include: uninstall_etcd.yml' >>$ansible_path/uninstall_plays.yml
 	fi
 fi

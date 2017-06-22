@@ -8,6 +8,9 @@ if [ $EUID -ne 0 ]; then
 	exit 1
 fi
 
+listen_url=":9999"
+control_url=":9999"
+
 kubectl="kubectl --kubeconfig /etc/kubernetes/admin.conf"
 k8sversion=$($kubectl version --short | grep "Server Version")
 if [[ "$k8sversion" == *"v1.4"* ]] || [[ "$k8sversion" == *"v1.5"* ]]; then
@@ -79,6 +82,8 @@ Additional Options for ACI:
 -d   string     APIC physical domain
 -e   string     APIC EPG bridge domain
 -m   string     APIC contracts unrestricted mode
+-o   string     Listen URL for netmaster (default is ":9999")
+-r   string     Control URL for netmaster (default is ":9999")
 
 Examples:
 
@@ -106,7 +111,7 @@ error_ret() {
 	exit 1
 }
 
-while getopts ":s:n:v:w:c:t:k:a:u:p:l:d:e:m:y:z:g:i:" opt; do
+while getopts ":s:n:v:w:c:t:k:a:u:p:l:d:e:m:y:z:o:r:g:i" opt; do
 	case $opt in
 		s)
 			cluster_store=$OPTARG
@@ -156,6 +161,12 @@ while getopts ":s:n:v:w:c:t:k:a:u:p:l:d:e:m:y:z:g:i:" opt; do
 		z)
 			apic_cert_dn=$OPTARG
 			;;
+		r)
+			control_url=$OPTARG
+			;;
+		o)
+			listen_url=$OPTARG
+      ;;
 		g)
 			infra_gateway=$OPTARG
 			;;
@@ -240,6 +251,8 @@ cp $tls_key /var/contiv/auth_proxy_key.pem
 echo "Setting installation parameters"
 sed -i.bak "s/__NETMASTER_IP__/$netmaster/g" $contiv_yaml
 sed -i.bak "s/__VLAN_IF__/$vlan_if/g" $contiv_yaml
+sed -i.bak "s/__LISTEN_URL__/$listen_url/g" $contiv_yaml
+sed -i.bak "s/__CONTROL_URL__/$control_url/g" $contiv_yaml
 
 if [ "$apic_url" != "" ]; then
 	sed -i.bak "s#__APIC_URL__#$apic_url#g" $contiv_yaml
@@ -288,11 +301,11 @@ echo " "
 echo "Contiv UI is available at https://$netmaster:10000"
 echo "Please use the first run wizard or configure the setup as follows:"
 echo " Configure forwarding mode (optional, default is routing)."
-echo " netctl global set --fwd-mode routing"
+echo " netctl --netmaster http://$listen_url global set --fwd-mode routing"
 echo " Configure ACI mode (optional)"
-echo " netctl global set --fabric-mode aci --vlan-range <start>-<end>"
+echo " netctl --netmaster http://$listen_url global set --fabric-mode aci --vlan-range <start>-<end>"
 echo " Create a default network"
-echo " netctl net create -t default --subnet=<CIDR> default-net"
-echo " For example, netctl net create -t default --subnet=20.1.1.0/24 -g 20.1.1.1 default-net"
+echo " netctl --netmaster http://$listen_url net create -t default --subnet=<CIDR> default-net"
+echo " For example, netctl --netmaster http://$listen_url net create -t default --subnet=20.1.1.0/24  -g 20.1.1.1 default-net"
 echo " "
 echo "========================================================="
