@@ -26,7 +26,7 @@ etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
 # because of this, the default value for this variable will become the latest
 # version that is available in the Docker Store and should be considered
 # independent of $contiv_version above.
-v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.0.3"}
+v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.1.0-rc.1"}
 
 function usage() {
 	echo "Usage:"
