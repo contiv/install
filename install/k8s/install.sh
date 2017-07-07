@@ -8,7 +8,7 @@ if [ $EUID -ne 0 ]; then
 	exit 1
 fi
 
-listen_url=":9999"
+listen_url="localhost:9999"
 control_url=":9999"
 
 kubectl="kubectl --kubeconfig /etc/kubernetes/admin.conf"
