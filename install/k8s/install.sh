@@ -228,7 +228,7 @@ if [ "$aci_key" = "" ]; then
 	aci_key=./aci.key
 	echo "dummy" >$aci_key
 else
-	cp $aci_key ./aci.key
+	cp -u $aci_key ./aci.key
 	aci_key=./aci.key
 fi
 
@@ -245,8 +245,8 @@ if [ "$tls_cert" = "" ]; then
 	tls_cert=./local_certs/cert.pem
 	tls_key=./local_certs/local.key
 fi
-cp $tls_cert /var/contiv/auth_proxy_cert.pem
-cp $tls_key /var/contiv/auth_proxy_key.pem
+cp -u $tls_cert /var/contiv/auth_proxy_cert.pem
+cp -u $tls_key /var/contiv/auth_proxy_key.pem
 
 echo "Setting installation parameters"
 sed -i.bak "s/__NETMASTER_IP__/$netmaster/g" $contiv_yaml
