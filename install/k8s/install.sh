@@ -97,6 +97,19 @@ EOF
 	exit 1
 }
 
+
+# this function copies $1 to $2 if the full paths to $1 and $2 (as determined by
+# `realpath`) are different.  this allows people to specify a certificate, key, etc.
+# which was moved into place by a previous installer run.
+function copy_unless_identical_paths() {
+	local src="$(realpath "$1")"
+	local dest="$(realpath "$2")"
+
+	if [ "$src" != "$dest" ]; then
+		cp -u "$src" "$dest"
+	fi
+}
+
 error_ret() {
 	echo ""
 	echo "$1"
@@ -210,14 +223,22 @@ fi
 # We will store the ACI key in a k8s secret.
 # The name of the file should be aci.key
 if [ "$aci_key" = "" ]; then
-	aci_key=./aci.key
-	echo "dummy" >$aci_key
+	echo "dummy" >./aci_key
 else
-	cp -u $aci_key ./aci.key
-	aci_key=./aci.key
+	copy_unless_identical_paths $aci_key ./aci.key
 fi
+aci_key=./aci.key
 
-$kubectl create secret generic aci.key --from-file=$aci_key -n kube-system
+set +e
+$kubectl get secret aci.key -n kube-system &>/dev/null
+set -e
+
+if [ $? -eq 1 ]; then
+	echo "Creating aci.key secret"
+	$kubectl create secret generic aci.key --from-file=$aci_key -n kube-system
+else
+	echo "aci.key secret exists, skipping creation"
+fi
 
 mkdir -p /var/contiv
 
@@ -230,8 +251,8 @@ if [ "$tls_cert" = "" ]; then
 	tls_cert=./local_certs/cert.pem
 	tls_key=./local_certs/local.key
 fi
-cp -u $tls_cert /var/contiv/auth_proxy_cert.pem
-cp -u $tls_key /var/contiv/auth_proxy_key.pem
+copy_unless_identical_paths $tls_cert /var/contiv/auth_proxy_cert.pem
+copy_unless_identical_paths $tls_key /var/contiv/auth_proxy_key.pem
 
 echo "Setting installation parameters"
 sed -i.bak "s/__NETMASTER_IP__/$netmaster/g" $contiv_yaml
@@ -274,8 +295,15 @@ done
 set -e
 
 if [ "$fwd_mode" == "routing" ]; then
-	netctl global set --fwd-mode $fwd_mode
-	netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
+	netctl global set --fwd-mode $fwd_mode || true
+
+	netctl net ls -q | grep -q -w "contivh1"
+
+	if [ $? -eq 0 ]; then
+		echo "contivh1 network exists, skipping creation"
+	else
+		netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
+	fi
 fi
 
 echo "Installation is complete"
