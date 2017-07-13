@@ -128,6 +128,8 @@ spec:
       labels:
         k8s-app: contiv-netplugin
       annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '4567'
         scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
       hostNetwork: true
@@ -140,6 +142,8 @@ spec:
         # Runs netplugin container on each Kubernetes node.  This
         # container programs network policy and routes on each
         # host.
+        - name: sinatra-exporter
+          image: arshiagg/sinatra
         - name: contiv-netplugin
           image: contiv/netplugin:__CONTIV_VERSION__
           args:
