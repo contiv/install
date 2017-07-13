@@ -29,9 +29,6 @@ netmaster=""
 # Dataplane interface
 vlan_if=""
 
-# Contiv configuration can be specified through a config file and/or parameters
-contiv_config=""
-
 # Specify TLS certs to be used for API server
 tls_cert=""
 tls_key=""
@@ -106,7 +103,7 @@ error_ret() {
 	exit 1
 }
 
-while getopts ":s:n:v:w:c:t:k:a:u:p:l:d:e:m:y:z:g:i:" opt; do
+while getopts ":s:n:v:w:t:k:a:u:p:l:d:e:m:y:z:g:i:" opt; do
 	case $opt in
 		s)
 			cluster_store=$OPTARG
@@ -119,9 +116,6 @@ while getopts ":s:n:v:w:c:t:k:a:u:p:l:d:e:m:y:z:g:i:" opt; do
 			;;
 		w)
 			fwd_mode=$OPTARG
-			;;
-		c)
-			contiv_config=$OPTARG
 			;;
 		t)
 			tls_cert=$OPTARG
@@ -203,6 +197,8 @@ cat $contiv_yaml_template >>$contiv_yaml
 
 if [ "$cluster_store" = "" ]; then
 	cat $contiv_etcd_template >>$contiv_yaml
+else
+	sed -i.bak "s#cluster_store:.*#cluster_store: \"$cluster_store\"#g" $contiv_yaml
 fi
 
 if [ "$apic_url" != "" ]; then
