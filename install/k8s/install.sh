@@ -283,19 +283,21 @@ cp ./netctl /usr/bin/
 # Install Contiv
 $kubectl apply -f $contiv_yaml
 
-sleep 10
 set +e
-for i in {0..30}; do
-	netctl tenant ls >/dev/null 2>&1
-	if [ "$?" -eq "0" ]; then
-		break
-	fi
-	sleep 10
+for i in {0..150}; do
+	sleep 2
+	# check contiv pods
+	$kubectl get pods -n kube-system | grep -v "Running" | grep -q ^contiv  && continue
+	# check netplugin status
+	curl -s localhost:9090/inspect/driver | grep -wq FwdMode || continue
+	netctl tenant ls >/dev/null 2>&1 || continue
+	break
 done
 set -e
 
 if [ "$fwd_mode" == "routing" ]; then
 	netctl global set --fwd-mode $fwd_mode || true
+	sleep 5 # for re-init to complete
 
 	netctl net ls -q | grep -q -w "contivh1"
 
