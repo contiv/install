@@ -19,15 +19,15 @@ if [ "$#" -eq 1 ] && [ "$1" = "-h" ]; then
 fi
 
 # Delete the ACI secret if it is available
-kubectl delete secret aci.key -n kube-system
+$kubectl delete secret aci.key -n kube-system
 
 # Delete Contiv pods
-kubectl delete -f .contiv.yaml
+$kubectl delete -f .contiv.yaml
 
 if [ "$#" -eq 1 ] && [ "$1" = "etcd-cleanup" ]; then
 	rm -rf /var/etcd/contiv-data
 fi
 
-kubectl create -f install/k8s/$k8sfolder/cleanup.yaml
+$kubectl create -f install/k8s/$k8sfolder/cleanup.yaml
 sleep 60
-kubectl delete -f install/k8s/$k8sfolder/cleanup.yaml
+$kubectl delete -f install/k8s/$k8sfolder/cleanup.yaml
