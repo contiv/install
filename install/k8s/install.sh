@@ -29,9 +29,6 @@ netmaster=""
 # Dataplane interface
 vlan_if=""
 
-# Contiv configuration can be specified through a config file and/or parameters
-contiv_config=""
-
 # Specify TLS certs to be used for API server
 tls_cert=""
 tls_key=""
@@ -100,13 +97,26 @@ EOF
 	exit 1
 }
 
+
+# this function copies $1 to $2 if the full paths to $1 and $2 (as determined by
+# `realpath`) are different.  this allows people to specify a certificate, key, etc.
+# which was moved into place by a previous installer run.
+function copy_unless_identical_paths() {
+	local src="$(realpath "$1")"
+	local dest="$(realpath "$2")"
+
+	if [ "$src" != "$dest" ]; then
+		cp -u "$src" "$dest"
+	fi
+}
+
 error_ret() {
 	echo ""
 	echo "$1"
 	exit 1
 }
 
-while getopts ":s:n:v:w:c:t:k:a:u:p:l:d:e:m:y:z:g:i:" opt; do
+while getopts ":s:n:v:w:t:k:a:u:p:l:d:e:m:y:z:g:i:" opt; do
 	case $opt in
 		s)
 			cluster_store=$OPTARG
@@ -119,9 +129,6 @@ while getopts ":s:n:v:w:c:t:k:a:u:p:l:d:e:m:y:z:g:i:" opt; do
 			;;
 		w)
 			fwd_mode=$OPTARG
-			;;
-		c)
-			contiv_config=$OPTARG
 			;;
 		t)
 			tls_cert=$OPTARG
@@ -203,6 +210,8 @@ cat $contiv_yaml_template >>$contiv_yaml
 
 if [ "$cluster_store" = "" ]; then
 	cat $contiv_etcd_template >>$contiv_yaml
+else
+	sed -i.bak "s#cluster_store:.*#cluster_store: \"$cluster_store\"#g" $contiv_yaml
 fi
 
 if [ "$apic_url" != "" ]; then
@@ -214,14 +223,22 @@ fi
 # We will store the ACI key in a k8s secret.
 # The name of the file should be aci.key
 if [ "$aci_key" = "" ]; then
-	aci_key=./aci.key
-	echo "dummy" >$aci_key
+	echo "dummy" >./aci_key
 else
-	cp $aci_key ./aci.key
-	aci_key=./aci.key
+	copy_unless_identical_paths $aci_key ./aci.key
 fi
+aci_key=./aci.key
 
-$kubectl create secret generic aci.key --from-file=$aci_key -n kube-system
+set +e
+$kubectl get secret aci.key -n kube-system &>/dev/null
+set -e
+
+if [ $? -eq 1 ]; then
+	echo "Creating aci.key secret"
+	$kubectl create secret generic aci.key --from-file=$aci_key -n kube-system
+else
+	echo "aci.key secret exists, skipping creation"
+fi
 
 mkdir -p /var/contiv
 
@@ -234,8 +251,8 @@ if [ "$tls_cert" = "" ]; then
 	tls_cert=./local_certs/cert.pem
 	tls_key=./local_certs/local.key
 fi
-cp $tls_cert /var/contiv/auth_proxy_cert.pem
-cp $tls_key /var/contiv/auth_proxy_key.pem
+copy_unless_identical_paths $tls_cert /var/contiv/auth_proxy_cert.pem
+copy_unless_identical_paths $tls_key /var/contiv/auth_proxy_key.pem
 
 echo "Setting installation parameters"
 sed -i.bak "s/__NETMASTER_IP__/$netmaster/g" $contiv_yaml
@@ -266,20 +283,29 @@ cp ./netctl /usr/bin/
 # Install Contiv
 $kubectl apply -f $contiv_yaml
 
-sleep 10
 set +e
-for i in {0..30}; do
-	netctl tenant ls >/dev/null 2>&1
-	if [ "$?" -eq "0" ]; then
-		break
-	fi
-	sleep 10
+for i in {0..150}; do
+	sleep 2
+	# check contiv pods
+	$kubectl get pods -n kube-system | grep -v "Running" | grep -q ^contiv  && continue
+	# check netplugin status
+	curl -s localhost:9090/inspect/driver | grep -wq FwdMode || continue
+	netctl tenant ls >/dev/null 2>&1 || continue
+	break
 done
 set -e
 
 if [ "$fwd_mode" == "routing" ]; then
-	netctl global set --fwd-mode $fwd_mode
-	netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
+	netctl global set --fwd-mode $fwd_mode || true
+	sleep 5 # for re-init to complete
+
+	netctl net ls -q | grep -q -w "contivh1"
+
+	if [ $? -eq 0 ]; then
+		echo "contivh1 network exists, skipping creation"
+	else
+		netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
+	fi
 fi
 
 echo "Installation is complete"
