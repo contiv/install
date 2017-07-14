@@ -299,13 +299,7 @@ if [ "$fwd_mode" == "routing" ]; then
 	netctl global set --fwd-mode $fwd_mode || true
 	sleep 5 # for re-init to complete
 
-	netctl net ls -q | grep -q -w "contivh1"
-
-	if [ $? -eq 0 ]; then
-		echo "contivh1 network exists, skipping creation"
-	else
-		netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
-	fi
+	netctl net ls -q | grep -q -w "contivh1" || netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
 fi
 
 echo "Installation is complete"
