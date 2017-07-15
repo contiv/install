@@ -112,7 +112,7 @@ function copy_unless_identical_paths() {
 
 error_ret() {
 	echo ""
-	echo "$1"
+	echo "$*"
 	exit 1
 }
 
@@ -293,6 +293,9 @@ for i in {0..150}; do
 	netctl tenant ls >/dev/null 2>&1 || continue
 	break
 done
+
+[[ $i -ge 150 ]] && error_ret "contiv pods are not ready !!"
+
 set -e
 
 if [ "$fwd_mode" == "routing" ]; then
