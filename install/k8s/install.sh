@@ -220,25 +220,19 @@ if [ "$apic_url" != "" ]; then
 	fwd_mode="bridge"
 fi
 
+# delete existing ACI key secret (if any)
+$kubectl get secret aci.key -n kube-system &>/dev/null && $kubectl delete secret aci.key -n kube-system
+
 # We will store the ACI key in a k8s secret.
 # The name of the file should be aci.key
 if [ "$aci_key" = "" ]; then
-	echo "dummy" >./aci_key
+	echo "dummy" >./aci.key
 else
 	copy_unless_identical_paths $aci_key ./aci.key
 fi
 aci_key=./aci.key
 
-set +e
-$kubectl get secret aci.key -n kube-system &>/dev/null
-set -e
-
-if [ $? -eq 1 ]; then
-	echo "Creating aci.key secret"
-	$kubectl create secret generic aci.key --from-file=$aci_key -n kube-system
-else
-	echo "aci.key secret exists, skipping creation"
-fi
+$kubectl create secret generic aci.key --from-file=$aci_key -n kube-system
 
 mkdir -p /var/contiv
 
