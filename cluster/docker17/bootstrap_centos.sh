@@ -30,4 +30,8 @@ if systemctl -q is-enabled firewalld; then
 fi
 usermod -a -G docker $SUDO_USER
 
+systemctl stop ntpd
+ntpdate 1.ntp.esl.cisco.com || ntpdate pool.ntp.org
+systemctl start ntpd
+
 exit 0
