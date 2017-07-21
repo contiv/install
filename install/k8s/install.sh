@@ -280,11 +280,33 @@ $kubectl apply -f $contiv_yaml
 set +e
 for i in {0..150}; do
 	sleep 2
+	# check contiv netmaster pods
+	$kubectl get pods -n kube-system | grep -v "Running" | grep -q ^contiv-netmaster  && continue
+	# check that netmaster is available
+	netctl tenant ls >/dev/null 2>&1 || continue
+	break
+done
+
+[[ $i -ge 150 ]] && error_ret "contiv netmaster is not ready !!"
+
+set -e
+
+if [ "$fwd_mode" == "routing" ]; then
+	netctl global set --fwd-mode $fwd_mode || true
+	netctl net ls -q | grep -q -w "contivh1" || netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
+
+	# Restart netplugin to allow fwdMode change
+	$kubectl -n kube-system delete daemonset contiv-netplugin
+	$kubectl apply -f $contiv_yaml
+fi
+
+set +e
+for i in {0..150}; do
+	sleep 2
 	# check contiv pods
 	$kubectl get pods -n kube-system | grep -v "Running" | grep -q ^contiv  && continue
 	# check netplugin status
 	curl -s localhost:9090/inspect/driver | grep -wq FwdMode || continue
-	netctl tenant ls >/dev/null 2>&1 || continue
 	break
 done
 
@@ -292,12 +314,6 @@ done
 
 set -e
 
-if [ "$fwd_mode" == "routing" ]; then
-	netctl global set --fwd-mode $fwd_mode || true
-	sleep 5 # for re-init to complete
-
-	netctl net ls -q | grep -q -w "contivh1" || netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
-fi
 
 echo "Installation is complete"
 echo "========================================================="
