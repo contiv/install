@@ -285,6 +285,7 @@ for i in {0..150}; do
 	# check netplugin status
 	curl -s localhost:9090/inspect/driver | grep -wq FwdMode || continue
 	netctl tenant ls >/dev/null 2>&1 || continue
+	sleep 15
 	break
 done
 
