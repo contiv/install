@@ -21,4 +21,8 @@ if systemctl -q is-enabled firewalld; then
 	systemctl disable firewalld
 fi
 
+systemctl stop ntpd
+ntpdate 1.ntp.esl.cisco.com || ntpdate pool.ntp.org
+systemctl start ntpd
+
 exit 0
