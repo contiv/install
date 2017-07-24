@@ -129,7 +129,7 @@ spec:
         k8s-app: contiv-netplugin
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/port: '4567'
+        prometheus.io/port: '9004'
         scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
       hostNetwork: true
@@ -142,8 +142,16 @@ spec:
         # Runs netplugin container on each Kubernetes node.  This
         # container programs network policy and routes on each
         # host.
-        - name: sinatra-exporter
-          image: arshiagg/sinatra
+        - name: netplugin-exporter
+          image: contiv/stats
+          env:
+            - name: CONTIV_ETCD
+              valueFrom:
+                configMapKeyRef:
+                  name: contiv-config
+                  key: cluster_store
+            - name: EXPORTER_MODE
+              value: 'netplugin'
         - name: contiv-netplugin
           image: contiv/netplugin:__CONTIV_VERSION__
           args:
@@ -236,6 +244,8 @@ spec:
       labels:
         k8s-app: contiv-netmaster
       annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9005'
         scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
       # The netmaster must run in the host network namespace so that
@@ -248,6 +258,16 @@ spec:
         node-role.kubernetes.io/master: ""
       serviceAccountName: contiv-netmaster
       containers:
+        - name: netmaster-exporter
+          image: contiv/stats
+          env:
+            - name: CONTIV_ETCD
+              valueFrom:
+                configMapKeyRef:
+                  name: contiv-config
+                  key: cluster_store
+            - name: EXPORTER_MODE
+              value: 'netmaster'
         - name: contiv-netmaster
           image: contiv/netplugin:__CONTIV_VERSION__
           args:

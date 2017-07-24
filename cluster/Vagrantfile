@@ -230,7 +230,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       c.vm.network :private_network, ip: node_addr, virtualbox__intnet: 'true', auto_config: false
 
       c.vm.provider 'virtualbox' do |v|
-         v.memory = node_orc == ORC_KUBEADM && master_ips.include?(node_addr) ? 2048 : 512
+        v.memory = node_orc == ORC_KUBEADM && master_ips.include?(node_addr) ? 2048 : 512
         # make all nics 'virtio' to take benefit of builtin vlan tag
         # support, which otherwise needs to be enabled in Intel drivers,
         # which are used by default by virtualbox

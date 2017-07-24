@@ -1,8 +1,8 @@
-# Gives Prometheus permission to share the cluster
+# Gives Grafana permission to share the cluster
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
-  name: prometheus
+  name: grafana
   namespace: kube-system
 rules:
 - apiGroups: [""]
@@ -12,43 +12,43 @@ rules:
 - nonResourceURLs: ["/metrics"]
   verbs: ["get"]
 ---
-# Prometheus is a process and hence needs service account access
+# Grafana is a process and hence needs service account access
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: prometheus
+  name: grafana
   namespace: kube-system
-# Binds Prometheus to the kube-system namespace
+# Binds Grafana to the kube-system namespace
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: prometheus
+  name: grafana
   namespace: kube-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: prometheus
+  name: grafana
 subjects:
 - kind: ServiceAccount
-  name: prometheus
+  name: grafana
   namespace: kube-system
-# Deploy prometheus as a replicaset with one container
+# Deploy Grafana as a replicaset with one container
 ---
 apiVersion: extensions/v1beta1
 kind: ReplicaSet
 metadata:
-  name: contiv-prometheus
+  name: contiv-grafana
   namespace: kube-system
   labels:
-    k8s-app: contiv-prometheus
+    k8s-app: contiv-grafana
 spec:
   replicas: 1
   template:
     metadata:
-      name: contiv-prometheus
+      name: contiv-grafana
       labels:
-        k8s-app: contiv-prometheus
+        k8s-app: contiv-grafana
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
@@ -58,29 +58,22 @@ spec:
       nodeSelector:
         node-role.kubernetes.io/master: ""
       containers:
-        - name: contiv-prometheus
-          image: prom/prometheus
-          volumeMounts:
-            - mountPath: /etc/prometheus
-              name: var-contiv
-      volumes:
-        - name: var-contiv
-          hostPath:
-            path: /var/contiv
-      serviceAccountName: prometheus
-# Expose prometheus as a service
+        - name: contiv-grafana
+          image: grafana/grafana
+      serviceAccountName: grafana
+# Expose Grafana as a service
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: prometheus
+  name: grafana
   namespace: kube-system
 spec:
   type: NodePort 
   selector:
-    k8s-app: contiv-prometheus 
+    k8s-app: contiv-grafana
   ports:
     - protocol: TCP
-      port: 9090
-      nodePort: 32700
-
+      port: 3000
+      nodePort: 32701
+      
