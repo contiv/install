@@ -13,7 +13,7 @@ if [[ "$releases" != *"browser_download_url"* ]]; then
 	exit 1
 fi
 
-release=$(echo "$releases" | python -c 'import json, sys;print json.load(sys.stdin)["name"]')
+release=$(echo "$releases" | python -c 'import json, sys; print(json.load(sys.stdin)["name"])')
 echo $release
 
 exit 0
