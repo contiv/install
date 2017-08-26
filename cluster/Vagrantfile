@@ -202,10 +202,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         c.vm.box = 'ubuntu/xenial64'
       else
         if node_orc == ORC_SWARM
-          config.vm.box = 'contiv/centos73'
-          config.vm.box_version = '0.10.1'
+          c.vm.box = 'contiv/centos73'
+          c.vm.box_version = '0.10.1'
         else
-          config.vm.box = 'centos/7'
+          c.vm.box = 'centos/7'
         end
         config.ssh.insert_key = false
       end

@@ -1,0 +1,51 @@
+# Grafana is a process and hence needs service account access
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: grafana
+  namespace: kube-system
+# Deploy Grafana as a replicaset with one container
+---
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  name: contiv-grafana
+  namespace: kube-system
+  labels:
+    k8s-app: contiv-grafana
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: contiv-grafana
+      labels:
+        k8s-app: contiv-grafana
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      containers:
+        - name: contiv-grafana
+          image: grafana/grafana
+      serviceAccountName: grafana
+# Expose Grafana as a service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: kube-system
+spec:
+  type: NodePort 
+  selector:
+    k8s-app: contiv-grafana
+  ports:
+    - protocol: TCP
+      port: 3000
+      nodePort: 32701
+      
