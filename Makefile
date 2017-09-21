@@ -24,9 +24,7 @@ cluster-swarm-mode: vagrant-clean
 
 # Brings up a demo cluster to install Contiv on with kubeadm, centos.
 cluster-kubeadm: vagrant-clean
-	cd cluster && \
-	vagrant up kubeadm-master && \
-	vagrant up kubeadm-worker0
+	@bash ./scripts/vagrantup.sh kubeadm
 
 cluster-destroy: vagrant-clean
 
