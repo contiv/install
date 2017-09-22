@@ -276,9 +276,11 @@ echo "Applying contiv installation"
 grep -q -F "netmaster" /etc/hosts || echo "$netmaster netmaster" >>/etc/hosts
 echo "To customize the installation press Ctrl+C and edit $contiv_yaml."
 sleep 5
-chmod +x ./netctl
+
+# Previous location was in /usr/bin/, so delete it in the case of an upgrade.
 rm -f /usr/bin/netctl
-cp ./netctl /usr/bin/
+install -m 755 -o root -g root ./netctl /usr/local/bin/netctl
+
 # Install Contiv
 $kubectl apply -f $contiv_yaml
 
