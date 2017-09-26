@@ -8,7 +8,12 @@ if [ $EUID -ne 0 ]; then
 	exit 1
 fi
 
-kubectl="kubectl --kubeconfig /etc/kubernetes/admin.conf"
+if [ -e /etc/kubernetes/admin.conf ]
+then
+    kubectl="kubectl --kubeconfig /etc/kubernetes/admin.conf"
+else
+    kubectl="kubectl"
+fi
 k8sversion=$($kubectl version --short | grep "Server Version")
 if [[ "$k8sversion" == *"v1.4"* ]] || [[ "$k8sversion" == *"v1.5"* ]]; then
 	k8sfolder="k8s1.4"
@@ -271,9 +276,11 @@ echo "Applying contiv installation"
 grep -q -F "netmaster" /etc/hosts || echo "$netmaster netmaster" >>/etc/hosts
 echo "To customize the installation press Ctrl+C and edit $contiv_yaml."
 sleep 5
-chmod +x ./netctl
+
+# Previous location was in /usr/bin/, so delete it in the case of an upgrade.
 rm -f /usr/bin/netctl
-cp ./netctl /usr/bin/
+install -m 755 -o root -g root ./netctl /usr/local/bin/netctl
+
 # Install Contiv
 $kubectl apply -f $contiv_yaml
 

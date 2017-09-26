@@ -24,9 +24,7 @@ cluster-swarm-mode: vagrant-clean
 
 # Brings up a demo cluster to install Contiv on with kubeadm, centos.
 cluster-kubeadm: vagrant-clean
-	cd cluster && \
-	vagrant up kubeadm-master && \
-	vagrant up kubeadm-worker0
+	@bash ./scripts/vagrantup.sh kubeadm
 
 cluster-destroy: vagrant-clean
 
@@ -89,7 +87,7 @@ release-test-kubelegacy: build
 
 # shfmt reformats all shell scripts in this repo
 shfmt:
-	go get github.com/mvdan/sh/cmd/shfmt
+	go get github.com/contiv-experimental/sh/cmd/shfmt
 	find . -type f -name "*.sh" -print0 | xargs -0 shfmt -w
 
 # Test the installation on the provided cluster. This is for bare-metal and other
