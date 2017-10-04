@@ -18,7 +18,8 @@ contiv_v2plugin_install=""
 # Check for docker
 
 if ! docker version >/dev/null 2>&1; then
-	echo "docker not found. Please retry after installing docker."
+	echo "docker not found or is not running."
+	echo "Please ensure docker is installed and running before retrying."
 	exit 1
 fi
 
