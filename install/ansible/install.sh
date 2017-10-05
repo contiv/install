@@ -104,7 +104,7 @@ env_file=install/ansible/env.json
 
 echo "Verifying ansible reachability"
 ansible all -vvv $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' | tee $inventory_log
-if [ egrep 'FAIL|UNREACHABLE' $inventory_log > /dev/null ]; then
+if egrep -q 'FAIL|UNREACHABLE' $inventory_log; then
 	echo "WARNING Some of the hosts are not accessible via passwordless SSH"
 	echo " "
 	echo "This means either the host is unreachable or passwordless SSH is not"
