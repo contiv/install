@@ -20,6 +20,8 @@ ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$contiv_version}
 auth_proxy_version=${CONTIV_API_PROXY_VERSION:-$contiv_version}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
 etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
+contiv_ansible_commit=${CONTIV_ANSIBLE_COMMIT:-b55e1fdcb84710bd9afeb71cbb45d7d36333257e}
+contiv_ansible_owner=${CONTIV_ANSIBLE_OWNER:-contiv}
 
 # the installer currently pulls the v2plugin image directly from Docker Hub, but
 # this will change to being downloaded from the Docker Store in the future.
@@ -96,8 +98,11 @@ curl -sSL https://github.com/contiv/netplugin/releases/download/$contiv_version/
 pushd $output_dir
 tar oxf netplugin-$contiv_version.tar.bz2 netctl
 rm -f netplugin-$contiv_version.tar.bz2
-git clone https://github.com/contiv/ansible
 popd
+# add ansible repo contents where final tarball will include
+mkdir $output_dir/ansible
+curl -sL https://api.github.com/repos/${contiv_ansible_owner}/ansible/tarball/$contiv_ansible_commit \
+    | tar --strip-components 1 -C $output_dir/ansible -z -x
 
 # Replace versions
 files=$(find $output_dir -type f -name "*.yaml" -or -name "*.sh" -or -name "*.json")
