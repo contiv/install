@@ -20,7 +20,7 @@ ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$contiv_version}
 auth_proxy_version=${CONTIV_API_PROXY_VERSION:-$contiv_version}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
 etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
-contiv_ansible_commit=${CONTIV_ANSIBLE_COMMIT:-b55e1fdcb84710bd9afeb71cbb45d7d36333257e}
+contiv_ansible_commit=${CONTIV_ANSIBLE_COMMIT:-4e67f54a8042debfc3d8b504046d0a1d4ea38c37}
 contiv_ansible_owner=${CONTIV_ANSIBLE_OWNER:-contiv}
 
 # the installer currently pulls the v2plugin image directly from Docker Hub, but
