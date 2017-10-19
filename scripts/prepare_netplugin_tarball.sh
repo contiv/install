@@ -5,12 +5,12 @@
 # * retrieves netplugin-$CONTIV_NETPLUGIN_VERSION.tar.bz2 from github
 #   releases
 # or if $NETPLUGIN_BRANCH is set to an upstream branch name:
-# * downloads the branch and compiles it, naming it
-#   netplugin-<COMMIT_SHA>.tar.bz2
-#   NETPLUGIN_OWNER can be set to pull from named fork instead of
-#   contiv/netplugin
+# * downloads the branch from fork owner $NETPLUGIN_OWNER and compiles
+#   it, naming it netplugin-<COMMIT_SHA>.tar.bz2
 
 set -euxo pipefail
+
+: ${CONTIV_NETPLUGIN_TARBALL_NAME} # check if defined
 
 mkdir -p $CONTIV_ARTIFACT_STAGING
 
