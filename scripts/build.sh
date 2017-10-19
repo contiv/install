@@ -13,7 +13,7 @@ fi
 DEV_IMAGE_NAME="devbuild"
 VERSION=${BUILD_VERSION-$DEV_IMAGE_NAME}
 
-contiv_version=${CONTIV_VERSION:-"1.1.5-cvd.1"}
+contiv_version=${CONTIV_VERSION:-"1.1.5"}
 pull_images=${CONTIV_CI_HOST:-"false"}
 aci_gw_version=${CONTIV_ACI_GW_VERSION:-"08-04-2017.2.2_2j"}
 ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$contiv_version}
@@ -28,7 +28,7 @@ contiv_ansible_owner=${CONTIV_ANSIBLE_OWNER:-contiv}
 # because of this, the default value for this variable will become the latest
 # version that is available in the Docker Store and should be considered
 # independent of $contiv_version above.
-v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.1.5-cvd.1"}
+v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.1.5"}
 
 function usage() {
 	echo "Usage:"
