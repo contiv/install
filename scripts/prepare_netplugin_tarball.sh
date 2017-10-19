@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# Produces a tarball of netplugin binaries at $CONTIV_ARTIFACT_STAGING
+# It either:
+# * retrieves netplugin-$CONTIV_NETPLUGIN_VERSION.tar.bz2 from github
+#   releases
+# or if $NETPLUGIN_BRANCH is set to an upstream branch name:
+# * downloads the branch and compiles it, naming it
+#   netplugin-<COMMIT_SHA>.tar.bz2
+#   NETPLUGIN_OWNER can be set to pull from named fork instead of
+#   contiv/netplugin
+
+set -euxo pipefail
+
+mkdir -p $CONTIV_ARTIFACT_STAGING
+
+# check if installer is for a release version of netplugin
+if [ -z "${NETPLUGIN_BRANCH:-}" ]; then
+    echo Downloading netplugin-${CONTIV_NETPLUGIN_VERSION}
+    # retrieve release vesion of netplugin
+    base_url=https://github.com/contiv/netplugin/releases/download
+    netplugin_bundle_name=netplugin-$CONTIV_NETPLUGIN_VERSION.tar.bz2
+    curl -sL ${base_url}/$CONTIV_NETPLUGIN_VERSION/$netplugin_bundle_name \
+        -o ${CONTIV_ARTIFACT_STAGING}/$netplugin_bundle_name
+    exit
+fi
+
+# build netplugin based on SHA
+
+# tempdir for building and cleanup on exit
+netplugin_tmp_dir="$(mktemp -d)"
+trap 'rm -rf ${netplugin_tmp_dir}' EXIT
+
+echo Cloning ${NETPLUGIN_OWNER}/netplugin branch ${NETPLUGIN_BRANCH}
+# about 3x faster to pull the HEAD of a branch with no history
+git clone --branch ${NETPLUGIN_BRANCH} --depth 1 \
+    https://github.com/${NETPLUGIN_OWNER}/netplugin.git \
+    ${netplugin_tmp_dir}/netplugin
+
+# run the build and extract the binaries
+cd $netplugin_tmp_dir/netplugin
+GIT_COMMIT=$(./scripts/getGitCommit.sh)
+# gopath is set in the tar container, not used, but makefile requires it set
+make GOPATH=${GOPATH:-.} BUILD_VERSION=${GIT_COMMIT} tar
+
+# move the netplugin tarball to the staging directory for the installer
+mv netplugin-${GIT_COMMIT}.tar.bz2 \
+    ${CONTIV_ARTIFACT_STAGING}/
+# create a link so other scripts can find the file without knowing the SHA
+cd ${CONTIV_ARTIFACT_STAGING}
+ln -sf netplugin-${GIT_COMMIT}.tar.bz2 $CONTIV_NETPLUGIN_TARBALL_NAME
