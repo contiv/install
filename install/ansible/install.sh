@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -euo pipefail
+set -xeuo pipefail
 
 # This scripts runs in a container with ansible installed.
 . ./install/ansible/install_defaults.sh
@@ -39,38 +39,38 @@ error_ret() {
 
 while getopts ":n:a:im:d:v:ps:" opt; do
 	case $opt in
-		n)
-			netmaster=$OPTARG
-			;;
-		a)
-			ans_opts=$OPTARG
-			;;
-		i)
-			install_scheduler=true
-			;;
-		m)
-			contiv_network_mode=$OPTARG
-			;;
-		d)
-			fwd_mode=$OPTARG
-			;;
-		v)
-			aci_image=$OPTARG
-			;;
-		p)
-			contiv_v2plugin_install=true
-			;;
-		s)
-			cluster_store=$OPTARG
-			install_etcd=false
-			;;
-		:)
-			echo "An argument required for $OPTARG was not passed"
-			usage
-			;;
-		?)
-			usage
-			;;
+	n)
+		netmaster=$OPTARG
+		;;
+	a)
+		ans_opts=$OPTARG
+		;;
+	i)
+		install_scheduler=true
+		;;
+	m)
+		contiv_network_mode=$OPTARG
+		;;
+	d)
+		fwd_mode=$OPTARG
+		;;
+	v)
+		aci_image=$OPTARG
+		;;
+	p)
+		contiv_v2plugin_install=true
+		;;
+	s)
+		cluster_store=$OPTARG
+		install_etcd=false
+		;;
+	:)
+		echo "An argument required for $OPTARG was not passed"
+		usage
+		;;
+	?)
+		usage
+		;;
 	esac
 done
 
@@ -128,23 +128,29 @@ if [ "$cluster_store" == "" ]; then
 	cluster_store="etcd://localhost:2379"
 fi
 
-sed -i.bak "s#.*service_vip.*#\"service_vip\":\"$service_vip\",#g" "$env_file"
-sed -i.bak "s#.*netctl_url.*#\"netctl_url\":\"http://$service_vip:9999\",#g" "$env_file"
-sed -i.bak "s#.*cluster_store.*#\"cluster_store\":\"$cluster_store\",#g" "$env_file"
+sed -i.bak 's#__NETMASTER_IP__#'"$service_vip"'#g' "$env_file"
+sed -i.bak 's#__CLUSTER_STORE__#'"$cluster_store"'#g' "$env_file"
+sed -i.bak 's#__DOCKER_RESET_CONTAINER_STATE__#false#g' "$env_file"
+sed -i.bak 's#__DOCKER_RESET_IMAGE_STATE__#false#g' "$env_file"
+sed -i.bak 's#__ETCD_CLEANUP_STATE__#false#g' "$env_file"
+sed -i.bak 's#__AUTH_PROXY_LOCAL_INSTALL__#false#g' "$env_file"
+sed -i.bak 's#__CONTIV_NETWORK_LOCAL_INSTALL__#false#g' "$env_file"
 
 # Copy certs
 cp /var/contiv/cert.pem /ansible/roles/auth_proxy/files/
 cp /var/contiv/key.pem /ansible/roles/auth_proxy/files/
 
 if [ "$aci_image" != "" ]; then
-	sed -i.bak "s#.*aci_gw_image.*#\"aci_gw_image\":\"$aci_image\",#g" "$env_file"
+	sed -i.bak 's#__ACI_GW_VERSION__#'"$aci_image"'#g' "$env_file"
 fi
 if [ "$contiv_v2plugin_install" == "true" ]; then
-	sed -i.bak "s#.*vxlan_port.*#\"vxlan_port\":\"8472\",#g" "$env_file"
-	sed -i.bak "s#.*contiv_v2plugin_install.*#\"contiv_v2plugin_install\":\"True\",#g" "$env_file"
+	# docker uses 4789 port for container ingress network, uses 8472 by default to avoid conflicting
+	# https://docs.docker.com/engine/swarm/ingress/
+	sed -i.bak 's#__VXLAN_PORT__#8472#g' "$env_file"
+	sed -i.bak 's#__CONTIV_V2PLUGIN_INSTALL__#true#g' "$env_file"
 else
-	sed -i.bak "s#.*vxlan_port.*#\"vxlan_port\":\"4789\",#g" "$env_file"
-	sed -i.bak "s#.*contiv_v2plugin_install.*#\"contiv_v2plugin_install\":\"False\",#g" "$env_file"
+	sed -i.bak 's#__VXLAN_PORT__#4789#g' "$env_file"
+	sed -i.bak 's#__CONTIV_V2PLUGIN_INSTALL__#false#g' "$env_file"
 fi
 
 echo "Installing Contiv"
@@ -170,14 +176,11 @@ echo '- include: install_auth_proxy.yml' >>$ansible_path/install_plays.yml
 log_file_name="contiv_install_$(date -u +%m-%d-%Y.%H-%M-%S.UTC).log"
 log_file="/var/contiv/$log_file_name"
 
-# Ansible needs unquoted booleans but we need quoted booleans for json parsing.
-# So remove quotes before sending to ansible and add them back after.
-sed -i.bak "s#\"True\"#True#gI" "$env_file"
-sed -i.bak "s#\"False\"#False#gI" "$env_file"
-ansible-playbook $ans_opts -i "$host_inventory" -e "$(cat $env_file)" $ansible_path/install_plays.yml | tee $log_file
-sed -i.bak "s#True#\"True\"#gI" "$env_file"
-sed -i.bak "s#False#\"False\"#gI" "$env_file"
-rm -rf "$env_file.bak*"
+echo "Ansible extra vars from env.json:"
+cat "$env_file"
+# run playbook
+ansible-playbook $ans_opts -i "$host_inventory" -e@"$env_file" $ansible_path/install_plays.yml | tee $log_file
+rm -rf "$env_file.bak"
 
 unreachable=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "unreachable=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
 failed=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "failed=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
