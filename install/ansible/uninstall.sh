@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -euo pipefail
+set -xeuo pipefail
 # This scripts runs in a container with ansible installed.
 . ./install/ansible/install_defaults.sh
 
@@ -40,43 +40,43 @@ error_ret() {
 
 while getopts ":n:a:ipm:d:v:rgs:" opt; do
 	case $opt in
-		n)
-			netmaster=$OPTARG
-			;;
-		a)
-			ans_opts=$OPTARG
-			;;
-		i)
-			uninstall_scheduler=true
-			;;
-		p)
-			uninstall_v2plugin=true
-			;;
-		m)
-			contiv_network_mode=$OPTARG
-			;;
-		d)
-			fwd_mode=$OPTARG
-			;;
-		v)
-			aci_image=$OPTARG
-			;;
-		s)
-			cluster_store=$OPTARG
-			;;
-		r)
-			reset="true"
-			;;
-		g)
-			reset_images="true"
-			;;
-		:)
-			echo "An argument required for $OPTARG was not passed"
-			usage
-			;;
-		?)
-			usage
-			;;
+	n)
+		netmaster=$OPTARG
+		;;
+	a)
+		ans_opts=$OPTARG
+		;;
+	i)
+		uninstall_scheduler=true
+		;;
+	p)
+		uninstall_v2plugin=true
+		;;
+	m)
+		contiv_network_mode=$OPTARG
+		;;
+	d)
+		fwd_mode=$OPTARG
+		;;
+	v)
+		aci_image=$OPTARG
+		;;
+	s)
+		cluster_store=$OPTARG
+		;;
+	r)
+		reset="true"
+		;;
+	g)
+		reset_images="true"
+		;;
+	:)
+		echo "An argument required for $OPTARG was not passed"
+		usage
+		;;
+	?)
+		usage
+		;;
 	esac
 done
 
@@ -105,7 +105,7 @@ env_file=install/ansible/env.json
 
 echo "Verifying ansible reachability"
 ansible all -vvv $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' | tee $inventory_log
-if [ egrep 'FAIL|UNREACHABLE' $inventory_log > /dev/null ]; then
+if [ egrep 'FAIL|UNREACHABLE' $inventory_log ] >/dev/null; then
 	echo "WARNING Some of the hosts are not accessible via passwordless SSH"
 	echo " "
 	echo "This means either the host is unreachable or passwordless SSH is not"
@@ -128,20 +128,24 @@ if [ "$cluster_store" == "" ]; then
 	cluster_store="etcd://$service_vip:2379"
 fi
 
-sed -i.bak "s#.*service_vip.*#\"service_vip\":\"$service_vip\",#g" "$env_file"
-sed -i.bak "s#.*cluster_store.*#\"cluster_store\":\"$cluster_store\",#g" "$env_file"
+sed -i.bak 's#__NETMASTER_IP__#'"$service_vip"'#g' "$env_file"
+sed -i.bak 's#__CLUSTER_STORE__#'"$cluster_store"'#g' "$env_file"
 
-sed -i.bak "s/.*docker_reset_container_state.*/\"docker_reset_container_state\":$reset,/g" $env_file
-sed -i.bak "s/.*docker_reset_image_state.*/\"docker_reset_image_state\":$reset_images,/g" $env_file
-sed -i.bak "s/.*etcd_cleanup_state.*/\"etcd_cleanup_state\":$reset,/g" $env_file
+sed -i.bak 's#__DOCKER_RESET_CONTAINER_STATE__#'"$reset"'#g' "$env_file"
+sed -i.bak 's#__DOCKER_RESET_IMAGE_STATE__#'"$reset_images"'#g' "$env_file"
+sed -i.bak 's#__ETCD_CLEANUP_STATE__#'"$reset"'#g' "$env_file"
+sed -i.bak 's#__AUTH_PROXY_LOCAL_INSTALL__#false#g' "$env_file"
+sed -i.bak 's#__CONTIV_NETWORK_LOCAL_INSTALL__#false#g' "$env_file"
+sed -i.bak 's#__AUTH_PROXY_LOCAL_INSTALL__#false#g' "$env_file"
+sed -i.bak 's#__CONTIV_NETWORK_LOCAL_INSTALL__#false#g' "$env_file"
 
 if [ "$aci_image" != "" ]; then
-	sed -i.bak "s#.*aci_gw_image.*#\"aci_gw_image\":\"$aci_image\",#g" "$env_file"
+	sed -i.bak 's#__ACI_GW_VERSION__#'"$aci_image"'#g' "$env_file"
 fi
 if [ "$uninstall_v2plugin" == "true" ]; then
-	sed -i.bak "s#.*contiv_v2plugin_install.*#\"contiv_v2plugin_install\":\"True\",#g" "$env_file"
+	sed -i.bak 's#__CONTIV_V2PLUGIN_INSTALL__#true#g' "$env_file"
 else
-	sed -i.bak "s#.*contiv_v2plugin_install.*#\"contiv_v2plugin_install\":\"False\",#g" "$env_file"
+	sed -i.bak 's#__CONTIV_V2PLUGIN_INSTALL__#false#g' "$env_file"
 fi
 
 echo "Uninstalling Contiv"
@@ -163,14 +167,11 @@ fi
 log_file_name="contiv_uninstall_$(date -u +%m-%d-%Y.%H-%M-%S.UTC).log"
 log_file="/var/contiv/$log_file_name"
 
-# Ansible needs unquoted booleans but we need quoted booleans for json parsing.
-# So remove quotes before sending to ansible and add them back after.
-sed -i.bak "s#\"True\"#True#gI" "$env_file"
-sed -i.bak "s#\"False\"#False#gI" "$env_file"
-ansible-playbook $ans_opts -i "$host_inventory" -e "$(cat $env_file)" $ansible_path/uninstall_plays.yml | tee $log_file
-sed -i.bak "s#True#\"True\"#gI" "$env_file"
-sed -i.bak "s#False#\"False\"#gI" "$env_file"
-rm -rf "$env_file.bak*"
+echo "Ansible extra vars from env.json:"
+cat "$env_file"
+ansible-playbook $ans_opts -i "$host_inventory" -e@"$env_file" $ansible_path/uninstall_plays.yml | tee $log_file
+
+rm -rf "$env_file.bak"
 
 unreachable=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "unreachable=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
 failed=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "failed=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)

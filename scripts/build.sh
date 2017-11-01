@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -xeuo pipefail
 
 # ensure this script wasn't called from the directory where this script
 # lives; it should be called from the repository's top level
@@ -44,28 +44,28 @@ function error_ret() {
 
 while getopts ":a:p:c:e:v:" opt; do
 	case $opt in
-		a)
-			aci_gw_version=$OPTARG
-			;;
-		c)
-			contiv_version=$OPTARG
-			;;
-		e)
-			etcd_version=$OPTARG
-			;;
-		p)
-			auth_proxy_version=$OPTARG
-			;;
-		v)
-			v2plugin_version=$OPTARG
-			;;
-		:)
-			echo "An argument required for $OPTARG was not passed"
-			usage
-			;;
-		?)
-			usage
-			;;
+	a)
+		aci_gw_version=$OPTARG
+		;;
+	c)
+		contiv_version=$OPTARG
+		;;
+	e)
+		etcd_version=$OPTARG
+		;;
+	p)
+		auth_proxy_version=$OPTARG
+		;;
+	v)
+		v2plugin_version=$OPTARG
+		;;
+	:)
+		echo "An argument required for $OPTARG was not passed"
+		usage
+		;;
+	?)
+		usage
+		;;
 	esac
 done
 
@@ -80,7 +80,7 @@ tmp_full_output_file="contiv-full-$VERSION.tgz"
 rm -rf $output_dir
 rm -rf $output_file
 
-# Release files 
+# Release files
 # k8s - install.sh to take the args and construct contiv.yaml as required and to launch kubectl
 # swarm - install.sh launches the container to do the actual installation
 # Top level install.sh which will either take k8s/swarm install params and do the required.
@@ -101,18 +101,18 @@ rm -f netplugin-$contiv_version.tar.bz2
 popd
 # add ansible repo contents where final tarball will include
 mkdir $output_dir/ansible
-curl -sL https://api.github.com/repos/${contiv_ansible_owner}/ansible/tarball/$contiv_ansible_commit \
-    | tar --strip-components 1 -C $output_dir/ansible -z -x
+curl -sL https://api.github.com/repos/${contiv_ansible_owner}/ansible/tarball/$contiv_ansible_commit |
+	tar --strip-components 1 -C $output_dir/ansible -z -x
 
 # Replace versions
 files=$(find $output_dir -type f -name "*.yaml" -or -name "*.sh" -or -name "*.json")
-sed -i.bak "s/__ACI_GW_VERSION__/$aci_gw_version/g" $files
-sed -i.bak "s/__API_PROXY_VERSION__/$auth_proxy_version/g" $files
-sed -i.bak "s/__CONTIV_INSTALL_VERSION__/$ansible_image_version/g" $files
-sed -i.bak "s/__CONTIV_VERSION__/$contiv_version/g" $files
-sed -i.bak "s/__DOCKER_VERSION__/$docker_version/g" $files
-sed -i.bak "s/__ETCD_VERSION__/$etcd_version/g" $files
-sed -i.bak "s/__CONTIV_V2PLUGIN_VERSION__/$v2plugin_version/g" $files
+sed -i.bak 's/__ACI_GW_VERSION__/'"$aci_gw_version"'/g' $files
+sed -i.bak 's/__API_PROXY_VERSION__/'"$auth_proxy_version"'/g' $files
+sed -i.bak 's/__CONTIV_INSTALL_VERSION__/'"$ansible_image_version"'/g' $files
+sed -i.bak 's/__CONTIV_VERSION__/'"$contiv_version"'/g' $files
+sed -i.bak 's/__DOCKER_VERSION__/'"$docker_version"'/g' $files
+sed -i.bak 's/__ETCD_VERSION__/'"$etcd_version"'/g' $files
+sed -i.bak 's/__CONTIV_V2PLUGIN_VERSION__/'"$v2plugin_version"'/g' $files
 
 # Make all shell script files executable
 chmod +x $(find $output_dir -type f -name "*.sh")
@@ -143,15 +143,16 @@ if [[ "$(docker images -q contiv/aci-gw:$aci_gw_version 2>/dev/null)" == "" || "
 fi
 aci_image=$(docker images -q contiv/aci-gw:$aci_gw_version)
 docker save $aci_image -o $binary_cache/aci-gw-image.tar
-curl -sL -o $binary_cache/openvswitch-2.5.0-2.el7.x86_64.rpm http://cbs.centos.org/kojifiles/packages/openvswitch/2.5.0/2.el7/x86_64/openvswitch-2.5.0-2.el7.x86_64.rpm
-curl -sL -o $binary_cache/ovs-common.deb http://mirrors.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-common_2.5.2-0ubuntu0.16.04.1_amd64.deb
-curl -sL -o $binary_cache/ovs-switch.deb http://mirrors.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-switch_2.5.2-0ubuntu0.16.04.1_amd64.deb
-curl -sL -o $binary_cache/netplugin-$contiv_version.tar.bz2 https://github.com/contiv/netplugin/releases/download/$contiv_version/netplugin-$contiv_version.tar.bz2
+curl --fail -sL -o $binary_cache/openvswitch-2.5.0-2.el7.x86_64.rpm http://cbs.centos.org/kojifiles/packages/openvswitch/2.5.0/2.el7/x86_64/openvswitch-2.5.0-2.el7.x86_64.rpm
+curl --fail -sL -o $binary_cache/ovs-common.deb http://mirrors.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-common_2.5.2-0ubuntu0.16.04.3_amd64.deb
+curl --fail -sL -o $binary_cache/ovs-switch.deb http://mirrors.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-switch_2.5.2-0ubuntu0.16.04.3_amd64.deb
 
 env_file=$output_dir/install/ansible/env.json
-sed -i.bak "s#.*auth_proxy_local_install.*#  \"auth_proxy_local_install\": True,#g" $env_file
-sed -i.bak "s#.*contiv_network_local_install.*#  \"contiv_network_local_install\": True,#g" $env_file
+sed -i.bak 's#__AUTH_PROXY_LOCAL_INSTALL__#true#g' "$env_file"
+sed -i.bak 's#__CONTIV_NETWORK_LOCAL_INSTALL__#true#g' "$env_file"
 
+echo "Ansible extra vars from env.json:"
+cat $env_file
 # Create the full tar bundle
 tar czf $tmp_full_output_file -C $release_dir contiv-$VERSION
 

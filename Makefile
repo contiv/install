@@ -19,7 +19,7 @@ cluster-legacy-swarm: vagrant-clean
 	@bash ./scripts/vagrantup.sh legacy-swarm
 
 # Brings up a demo cluster to install Contiv on with swarm, centos.
-cluster-swarm-mode: vagrant-clean	
+cluster-swarm-mode: vagrant-clean
 	@bash ./scripts/vagrantup.sh swarm-mode
 
 # Brings up a demo cluster to install Contiv on with kubeadm, centos.
@@ -50,7 +50,7 @@ demo-kubeadm:
 # of the demo Contiv Admin Console which was set up
 # BUILD_VERSION must be setup to use a specific build, e.g.
 # export BUILD_VERSION=1.0.0-beta.3
-# Or run make as BUILD_VERSION=1.0.0-beta.3 make demo-k8s
+# Or run make as BUILD_VERSION=1.0.0-beta.3 make demo-legacy-swarm
 demo-legacy-swarm:
 	BUILD_VERSION=$(rel_ver) make cluster-legacy-swarm
 	BUILD_VERSION=$(rel_ver) make install-test-legacy-swarm
@@ -58,7 +58,7 @@ demo-legacy-swarm:
 vagrant-clean:
 	cd cluster && vagrant destroy -f
 	@bash ./scripts/vbcleanup.sh
-	
+
 # Create a build and test the release installation on a vagrant cluster
 # TODO: The vagrant part of this can be optimized by taking snapshots instead
 # of creating a new set of VMs for each case
@@ -83,7 +83,7 @@ release-test-legacy-swarm: build
 release-test-kubelegacy: build
 	# Test k8s ansible (centos by default)
 	make cluster-kubeadm
-	make install-test-kube-legacy 
+	make install-test-kube-legacy
 
 # shfmt reformats all shell scripts in this repo
 shfmt:
@@ -91,7 +91,7 @@ shfmt:
 	find . -type f -name "*.sh" -print0 | xargs -0 shfmt -w
 
 # Test the installation on the provided cluster. This is for bare-metal and other
-# setups where the cluster is created using non-vagrant mechanisms. 
+# setups where the cluster is created using non-vagrant mechanisms.
 # Clusters need to have k8s installed for kubernetes kubeadm based mechanism and
 # docker installed on the master node for all others.
 install-test-swarm-mode:

@@ -34,7 +34,7 @@ Mandatory Options:
 -f   string     Configuration file (cfg.yml) listing the hostnames with the control and data interfaces and optionally ACI parameters
 -e   string     SSH key to connect to the hosts
 -u   string     SSH User
--i              Install the scheduler stack 
+-i              Install the scheduler stack
 -p              Install v2plugin
 
 Additional Options:
@@ -51,7 +51,7 @@ Additional parameters can also be updated in install/ansible/env.json file.
 
 Examples:
 
-1. Install Contiv with Docker Swarm on hosts specified by cfg.yml. 
+1. Install Contiv with Docker Swarm on hosts specified by cfg.yml.
 ./install/ansible/install_swarm.sh -f cfg.yml -e ~/ssh_key -u admin -i
 
 2. Install Contiv on hosts specified by cfg.yml. Docker should be pre-installed on the hosts.
