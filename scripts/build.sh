@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Required environment variables:
+# * CONTIV_INSTALLER_VERSION - sets the tarball artifact filenames
+# * CONTIV_NETPLUGIN_VERSION - updates config files to locate contiv tarball
+# * CONTIV_V2PLUGIN_VERSION - which v2plugin version to download during install
+
 set -xeuo pipefail
 
 # ensure this script wasn't called from the directory where this script
@@ -10,116 +15,50 @@ if [ "$script_dir" == "." ]; then
 	exit 1
 fi
 
-DEV_IMAGE_NAME="devbuild"
-VERSION=${BUILD_VERSION-$DEV_IMAGE_NAME}
-
-contiv_version=${CONTIV_VERSION:-"1.0.3"}
 pull_images=${CONTIV_CI_HOST:-"false"}
 aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
-ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$contiv_version}
-auth_proxy_version=${CONTIV_API_PROXY_VERSION:-$contiv_version}
+ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$DEFAULT_DOWNLOAD_CONTIV_VERSION}
+auth_proxy_version=${CONTIV_API_PROXY_VERSION:-$DEFAULT_DOWNLOAD_CONTIV_VERSION}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
 etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
-contiv_ansible_commit=${CONTIV_ANSIBLE_COMMIT:-4e67f54a8042debfc3d8b504046d0a1d4ea38c37}
-contiv_ansible_owner=${CONTIV_ANSIBLE_OWNER:-contiv}
+v2plugin_version=${CONTIV_V2PLUGIN_VERSION}
 
-# the installer currently pulls the v2plugin image directly from Docker Hub, but
-# this will change to being downloaded from the Docker Store in the future.
-# because of this, the default value for this variable will become the latest
-# version that is available in the Docker Store and should be considered
-# independent of $contiv_version above.
-v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.0.3"}
+# where everything is assembled, always start with a clean dir and clean it up
+output_tmp_dir="$(mktemp -d)"
+output_dir="${output_tmp_dir}/contiv-${CONTIV_INSTALLER_VERSION}"
+mkdir -p ${output_dir}
+trap 'rm -rf ${output_tmp_dir}' EXIT
 
-function usage() {
-	echo "Usage:"
-	echo "./release.sh -a <ACI gateway image> -c <contiv version> -e <etcd version> -p <API proxy image version> "
-	exit 1
-}
-
-function error_ret() {
-	echo ""
-	echo $1
-	exit 1
-}
-
-while getopts ":a:p:c:e:v:" opt; do
-	case $opt in
-	a)
-		aci_gw_version=$OPTARG
-		;;
-	c)
-		contiv_version=$OPTARG
-		;;
-	e)
-		etcd_version=$OPTARG
-		;;
-	p)
-		auth_proxy_version=$OPTARG
-		;;
-	v)
-		v2plugin_version=$OPTARG
-		;;
-	:)
-		echo "An argument required for $OPTARG was not passed"
-		usage
-		;;
-	?)
-		usage
-		;;
-	esac
-done
-
-release_dir="release"
-output_dir="$release_dir/contiv-$VERSION/"
-output_file="$release_dir/contiv-$VERSION.tgz"
-tmp_output_file="contiv-$VERSION.tgz"
-full_output_file="$release_dir/contiv-full-$VERSION.tgz"
-tmp_full_output_file="contiv-full-$VERSION.tgz"
-
-# Clean older dist folders and release binaries
-rm -rf $output_dir
-rm -rf $output_file
+release_dir=release
+mkdir -p $release_dir
+output_file="${release_dir}/contiv-${CONTIV_INSTALLER_VERSION}.tgz"
+full_output_file="$release_dir/contiv-full-${CONTIV_INSTALLER_VERSION}.tgz"
 
 # Release files
 # k8s - install.sh to take the args and construct contiv.yaml as required and to launch kubectl
 # swarm - install.sh launches the container to do the actual installation
 # Top level install.sh which will either take k8s/swarm install params and do the required.
-mkdir -p $output_dir
-cp -rf install $output_dir
-cp README.md $output_dir
+cp -rf install README.md $output_dir
 cp -rf scripts/generate-certificate.sh $output_dir/install
 
 # Get the ansible support files
 chmod +x $output_dir/install/genInventoryFile.py
 chmod +x $output_dir/install/generate-certificate.sh
 
-# This is maybe optional - but assume we need it for
-curl -sSL https://github.com/contiv/netplugin/releases/download/$contiv_version/netplugin-$contiv_version.tar.bz2 -o $output_dir/netplugin-$contiv_version.tar.bz2
-pushd $output_dir
-tar oxf netplugin-$contiv_version.tar.bz2 netctl
-rm -f netplugin-$contiv_version.tar.bz2
-popd
-# add ansible repo contents where final tarball will include
-mkdir $output_dir/ansible
-curl -sL https://api.github.com/repos/${contiv_ansible_owner}/ansible/tarball/$contiv_ansible_commit |
-	tar --strip-components 1 -C $output_dir/ansible -z -x
+cp -a ${CONTIV_ARTIFACT_STAGING}/ansible ${output_dir}/
 
 # Replace versions
 files=$(find $output_dir -type f -name "*.yaml" -or -name "*.sh" -or -name "*.json")
 sed -i.bak 's/__ACI_GW_VERSION__/'"$aci_gw_version"'/g' $files
 sed -i.bak 's/__API_PROXY_VERSION__/'"$auth_proxy_version"'/g' $files
 sed -i.bak 's/__CONTIV_INSTALL_VERSION__/'"$ansible_image_version"'/g' $files
-sed -i.bak 's/__CONTIV_VERSION__/'"$contiv_version"'/g' $files
+sed -i.bak 's/__CONTIV_VERSION__/'"$CONTIV_NETPLUGIN_VERSION"'/g' $files
 sed -i.bak 's/__DOCKER_VERSION__/'"$docker_version"'/g' $files
 sed -i.bak 's/__ETCD_VERSION__/'"$etcd_version"'/g' $files
 sed -i.bak 's/__CONTIV_V2PLUGIN_VERSION__/'"$v2plugin_version"'/g' $files
 
 # Make all shell script files executable
 chmod +x $(find $output_dir -type f -name "*.sh")
-
-# Cleanup the backup files
-rm -rf $output_dir/scripts
-rm -rf $(find $output_dir -type f -name "*.bak")
 
 # Clean up the Dockerfile, it is not part of the release bits.
 rm -f $output_dir/install/ansible/Dockerfile
@@ -128,8 +67,15 @@ rm -f $output_dir/install/ansible/Dockerfile
 binary_cache=$output_dir/contiv_cache
 mkdir -p $binary_cache
 
-# Create the minimal tar bundle
-tar czf $tmp_output_file -C $release_dir contiv-$VERSION
+# only build installer that pulls artifacts over internet if not building
+# a specific commit of netplugin
+if [ -z "${NETPLUGIN_BRANCH:-}" ]; then
+    # Create the minimal tar bundle
+    tar czf $output_file -C $output_tmp_dir contiv-${CONTIV_INSTALLER_VERSION}
+    echo -n "Contiv Installer version '$CONTIV_INSTALLER_VERSION' with "
+    echo    "netplugin version '$CONTIV_NETPLUGIN_VERSION' is available "
+    echo    "at '$output_file'"
+fi
 
 # Save the auth proxy & aci-gw images for packaging the full docker images with contiv install binaries
 if [[ "$(docker images -q contiv/auth_proxy:$auth_proxy_version 2>/dev/null)" == "" || "$pull_images" == "true" ]]; then
@@ -147,6 +93,18 @@ curl --fail -sL -o $binary_cache/openvswitch-2.5.0-2.el7.x86_64.rpm http://cbs.c
 curl --fail -sL -o $binary_cache/ovs-common.deb http://mirrors.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-common_2.5.2-0ubuntu0.16.04.3_amd64.deb
 curl --fail -sL -o $binary_cache/ovs-switch.deb http://mirrors.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-switch_2.5.2-0ubuntu0.16.04.3_amd64.deb
 
+# Copy the netplugin release into the binary cache for "full" installer
+# Netplugin releases built locally based on a branch are named by their SHA,
+# but there is a symlink to point to the SHA named tarball by it's branch name
+plugin_tball=${CONTIV_ARTIFACT_STAGING}/$CONTIV_NETPLUGIN_TARBALL_NAME
+if [[ -L "${plugin_tball}" ]]; then
+    # copy the link (so other processes can find the tarball) and the tarball
+    target_plugin_tball=$(readlink ${plugin_tball})
+    cp -a ${plugin_tball} ${binary_cache}/
+    plugin_tball=${CONTIV_ARTIFACT_STAGING}/${target_plugin_tball}
+fi
+cp ${plugin_tball} ${binary_cache}/
+
 env_file=$output_dir/install/ansible/env.json
 sed -i.bak 's#__AUTH_PROXY_LOCAL_INSTALL__#true#g' "$env_file"
 sed -i.bak 's#__CONTIV_NETWORK_LOCAL_INSTALL__#true#g' "$env_file"
@@ -154,10 +112,10 @@ sed -i.bak 's#__CONTIV_NETWORK_LOCAL_INSTALL__#true#g' "$env_file"
 echo "Ansible extra vars from env.json:"
 cat $env_file
 # Create the full tar bundle
-tar czf $tmp_full_output_file -C $release_dir contiv-$VERSION
-
-mv $tmp_output_file $output_file
-mv $tmp_full_output_file $full_output_file
-rm -rf $output_dir
-
-echo "Success: Contiv Installer version $VERSION is available at $output_file"
+tar czf $full_output_file -C $output_tmp_dir contiv-${CONTIV_INSTALLER_VERSION}
+echo -n "Contiv Installer version '$CONTIV_INSTALLER_VERSION' with "
+echo    "netplugin version '$CONTIV_NETPLUGIN_VERSION' is available "
+echo    "at '$full_output_file', it includes all contiv assets "
+echo    "required for installation"
+echo
+echo -e "\nSuccess"

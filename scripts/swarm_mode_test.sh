@@ -16,24 +16,31 @@ else
 fi
 user=${CONTIV_SSH_USER:-"$def_user"}
 
-# If BUILD_VERSION is not defined, we use a local dev build, that must have been created with make release
-install_version="contiv-${BUILD_VERSION:-devbuild}"
 pushd cluster
 ssh_key=${CONTIV_SSH_KEY:-"$def_key"}
 if [ "$ssh_key" == "" ]; then
 	ssh_key=$(vagrant ssh-config swarm-mode-master | grep IdentityFile | awk '{print $2}' | xargs)
 fi
 popd
+
 # Extract and launch the installer
 mkdir -p release
 cd release
-if [ ! -f "${install_version}.tgz" ]; then
-	# For release builds, get the build from github releases
-	curl -L -O https://github.com/contiv/install/releases/download/${BUILD_VERSION}/${install_version}.tgz
+# If BUILD_VERSION is not defined, we use a local dev build, that must have been created with make release
+release_name="contiv-${BUILD_VERSION:-devbuild}"
+release_tarball="${release_name}.tgz"
+release_local_tarball="contiv-full-${BUILD_VERSION}.tgz"
+if [ -f "${release_local_tarball}" ]; then
+    tar oxf "${release_local_tarball}"
+else
+    if [ ! -f "${release_tarball}" ]; then
+        # For release builds, get the build from github releases
+        curl -L -O https://github.com/contiv/install/releases/download/${BUILD_VERSION}/${release_name}.tgz
+    fi
+    tar oxf "${release_name}.tgz"
 fi
 
-tar oxf $install_version.tgz
-cd $install_version
+cd $release_name
 ./install/ansible/install_swarm.sh -f ../../cluster/.cfg_swarm-mode.yaml -e $ssh_key -u $user -p
 
 # Wait for CONTIV to start for up to 10 minutes

@@ -5,4 +5,5 @@ cluster/.vagrant
 cluster/export
 cluster/*.log
 release
+artifact_staging/
 
