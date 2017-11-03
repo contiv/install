@@ -3,6 +3,7 @@
 # Required environment variables:
 # * CONTIV_INSTALLER_VERSION - sets the tarball artifact filenames
 # * CONTIV_NETPLUGIN_VERSION - updates config files to locate contiv tarball
+# * CONTIV_V2PLUGIN_VERSION - which v2plugin version to download during install
 
 set -xeuo pipefail
 
@@ -20,13 +21,7 @@ ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$DEFAULT_DOWNLOAD_CONTIV_V
 auth_proxy_version=${CONTIV_API_PROXY_VERSION:-$DEFAULT_DOWNLOAD_CONTIV_VERSION}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
 etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
-
-# the installer currently pulls the v2plugin image directly from Docker Hub, but
-# this will change to being downloaded from the Docker Store in the future.
-# because of this, the default value for this variable will become the latest
-# version that is available in the Docker Store and should be considered
-# independent of $contiv_version above.
-v2plugin_version=${CONTIV_V2PLUGIN_VERSION:-"1.1.5"}
+v2plugin_version=${CONTIV_V2PLUGIN_VERSION}
 
 # where everything is assembled, always start with a clean dir and clean it up
 output_tmp_dir="$(mktemp -d)"

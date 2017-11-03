@@ -39,13 +39,15 @@ git clone --branch ${NETPLUGIN_BRANCH} --depth 1 \
 
 # run the build and extract the binaries
 cd $netplugin_tmp_dir/netplugin
-GIT_COMMIT=$(./scripts/getGitCommit.sh)
-# gopath is set in the tar container, not used, but makefile requires it set
-make GOPATH=${GOPATH:-.} BUILD_VERSION=${GIT_COMMIT} tar
+# BUILD_VERSION (currently == devbuild) is in env, so clear it
+declare +x BUILD_VERSION
+# this is most likely to be just SHA because we pulled only single commit
+NETPLUGIN_VERSION=$(./scripts/getGitVersion.sh)
+BUILD_VERSION=${NETPLUGIN_VERSION} make tar
 
 # move the netplugin tarball to the staging directory for the installer
-mv netplugin-${GIT_COMMIT}.tar.bz2 \
+mv netplugin-${NETPLUGIN_VERSION}.tar.bz2 \
     ${CONTIV_ARTIFACT_STAGING}/
 # create a link so other scripts can find the file without knowing the SHA
 cd ${CONTIV_ARTIFACT_STAGING}
-ln -sf netplugin-${GIT_COMMIT}.tar.bz2 $CONTIV_NETPLUGIN_TARBALL_NAME
+ln -sf netplugin-${NETPLUGIN_VERSION}.tar.bz2 $CONTIV_NETPLUGIN_TARBALL_NAME
