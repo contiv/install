@@ -1,6 +1,16 @@
 # Automated releases
 TBD
 
+# Testing release builds
+To create a full installer for legacy docker swarm of any branch of contiv, additionally set these two environment variables:
+
+* NETPLUGIN_BRANCH - the branch to compile instead of latest release
+* NETPLUGIN_OWNER (if not contiv) - the username for the netplugin fork
+
+This will only provide a "full" installer with the netplugin archive in `contiv_cache`
+
+Other types of installs such as v2plugin are not yet supported.
+
 # Manual releases
 1. Check out the right branch and the right commit. This is necessary
 when not releasing from the HEAD of master.
