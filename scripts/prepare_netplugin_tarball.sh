@@ -12,7 +12,7 @@ set -euxo pipefail
 
 : ${CONTIV_NETPLUGIN_TARBALL_NAME} # check if defined
 
-mkdir -p $CONTIV_ARTIFACT_STAGING
+mkdir -p "$CONTIV_ARTIFACT_STAGING"
 
 # check if installer is for a release version of netplugin
 if [ -z "${NETPLUGIN_BRANCH:-}" ]; then
@@ -21,7 +21,7 @@ if [ -z "${NETPLUGIN_BRANCH:-}" ]; then
     base_url=https://github.com/contiv/netplugin/releases/download
     netplugin_bundle_name=netplugin-$CONTIV_NETPLUGIN_VERSION.tar.bz2
     curl -sL ${base_url}/$CONTIV_NETPLUGIN_VERSION/$netplugin_bundle_name \
-        -o ${CONTIV_ARTIFACT_STAGING}/$netplugin_bundle_name
+        -o "${CONTIV_ARTIFACT_STAGING}/$netplugin_bundle_name"
     exit
 fi
 
@@ -47,7 +47,7 @@ BUILD_VERSION=${NETPLUGIN_VERSION} make tar
 
 # move the netplugin tarball to the staging directory for the installer
 mv netplugin-${NETPLUGIN_VERSION}.tar.bz2 \
-    ${CONTIV_ARTIFACT_STAGING}/
+    "${CONTIV_ARTIFACT_STAGING}/"
 # create a link so other scripts can find the file without knowing the SHA
-cd ${CONTIV_ARTIFACT_STAGING}
+cd "${CONTIV_ARTIFACT_STAGING}"
 ln -sf netplugin-${NETPLUGIN_VERSION}.tar.bz2 $CONTIV_NETPLUGIN_TARBALL_NAME
