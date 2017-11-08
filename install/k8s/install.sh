@@ -295,6 +295,10 @@ for i in {0..150}; do
 	sleep 2
 	# check contiv netmaster pods
 	$kubectl get pods -n kube-system | grep -v "Running" | grep -q ^contiv-netmaster  && continue
+	break
+done
+for i in {i..150}; do
+	sleep 2
 	# check that netmaster is available
 	netctl tenant ls >/dev/null 2>&1 || continue
 	break
