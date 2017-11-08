@@ -26,8 +26,8 @@ v2plugin_version=${CONTIV_V2PLUGIN_VERSION}
 # where everything is assembled, always start with a clean dir and clean it up
 output_tmp_dir="$(mktemp -d)"
 output_dir="${output_tmp_dir}/contiv-${CONTIV_INSTALLER_VERSION}"
-mkdir -p ${output_dir}
-trap 'rm -rf ${output_tmp_dir}' EXIT
+mkdir -p "${output_dir}"
+trap 'rm -rf "${output_tmp_dir}"' EXIT
 
 release_dir=release
 mkdir -p $release_dir
@@ -45,7 +45,7 @@ cp -rf scripts/generate-certificate.sh $output_dir/install
 chmod +x $output_dir/install/genInventoryFile.py
 chmod +x $output_dir/install/generate-certificate.sh
 
-cp -a ${CONTIV_ARTIFACT_STAGING}/ansible ${output_dir}/
+cp -a "${CONTIV_ARTIFACT_STAGING}/ansible" ${output_dir}/
 
 # Replace versions
 files=$(find $output_dir -type f -name "*.yaml" -or -name "*.sh" -or -name "*.json")
@@ -96,14 +96,14 @@ curl --fail -sL -o $binary_cache/ovs-switch.deb http://mirrors.kernel.org/ubuntu
 # Copy the netplugin release into the binary cache for "full" installer
 # Netplugin releases built locally based on a branch are named by their SHA,
 # but there is a symlink to point to the SHA named tarball by it's branch name
-plugin_tball=${CONTIV_ARTIFACT_STAGING}/$CONTIV_NETPLUGIN_TARBALL_NAME
+plugin_tball="${CONTIV_ARTIFACT_STAGING}/$CONTIV_NETPLUGIN_TARBALL_NAME"
 if [[ -L "${plugin_tball}" ]]; then
     # copy the link (so other processes can find the tarball) and the tarball
-    target_plugin_tball=$(readlink ${plugin_tball})
-    cp -a ${plugin_tball} ${binary_cache}/
-    plugin_tball=${CONTIV_ARTIFACT_STAGING}/${target_plugin_tball}
+    target_plugin_tball="$(readlink "${plugin_tball}")"
+    cp -a "${plugin_tball}" "${binary_cache}/"
+    plugin_tball="${CONTIV_ARTIFACT_STAGING}/${target_plugin_tball}"
 fi
-cp ${plugin_tball} ${binary_cache}/
+cp "${plugin_tball}" "${binary_cache}/"
 
 env_file=$output_dir/install/ansible/env.json
 sed -i.bak 's#__AUTH_PROXY_LOCAL_INSTALL__#true#g' "$env_file"
