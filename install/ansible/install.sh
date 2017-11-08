@@ -128,6 +128,7 @@ if [ "$cluster_store" == "" ]; then
 	cluster_store="etcd://localhost:2379"
 fi
 
+# variables already replaced by build.sh will not pattern match
 sed -i.bak 's#__NETMASTER_IP__#'"$service_vip"'#g' "$env_file"
 sed -i.bak 's#__CLUSTER_STORE__#'"$cluster_store"'#g' "$env_file"
 sed -i.bak 's#__DOCKER_RESET_CONTAINER_STATE__#false#g' "$env_file"

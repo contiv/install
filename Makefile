@@ -5,20 +5,22 @@ export CONTIV_INSTALLER_VERSION ?= $(BUILD_VERSION)
 # downloaded and built assets intended to go in installer by build.sh
 export CONTIV_ARTIFACT_STAGING := $(PWD)/artifact_staging
 # some assets are retrieved from GitHub, this is the default version to fetch
-export DEFAULT_DOWNLOAD_CONTIV_VERSION := 1.1.5
+export DEFAULT_DOWNLOAD_CONTIV_VERSION := 1.1.7
 export CONTIV_ACI_GW_VERSION ?= latest
 export NETPLUGIN_OWNER ?= contiv
 # setting NETPLUGIN_BRANCH compiles that commit on demand,
 # setting CONTIV_NETPLUGIN_VERSION will download that released version
 ifeq ($(NETPLUGIN_BRANCH),)
 export CONTIV_NETPLUGIN_VERSION ?= $(DEFAULT_DOWNLOAD_CONTIV_VERSION)
+export CONTIV_V2PLUGIN_VERSION ?= $(DEFAULT_DOWNLOAD_CONTIV_VERSION)
 else
 export CONTIV_NETPLUGIN_VERSION := $(NETPLUGIN_OWNER)-$(NETPLUGIN_BRANCH)
+export CONTIV_V2PLUGIN_VERSION ?= $(NETPLUGIN_OWNER)-$(NETPLUGIN_BRANCH)
 endif
-export CONTIV_V2PLUGIN_VERSION ?= $(DEFAULT_DOWNLOAD_CONTIV_VERSION)
 export CONTIV_NETPLUGIN_TARBALL_NAME := netplugin-$(CONTIV_NETPLUGIN_VERSION).tar.bz2
-export CONTIV_ANSIBLE_COMMIT ?= 8e20f56d541af8bc7a3ecbde0d9c64fa943812ed
-export CONTIV_ANSIBLE_OWNER ?= contiv
+export CONTIV_V2PLUGIN_TARBALL_NAME := v2plugin-$(CONTIV_V2PLUGIN_VERSION).tar.gz
+export CONTIV_ANSIBLE_COMMIT ?= build_v2plugin_on_demand
+export CONTIV_ANSIBLE_OWNER ?= chrisplo
 
 # this is the classic first makefile target, and it's also the default target
 # run when `make` is invoked with no specific target.
@@ -32,15 +34,15 @@ download-ansible-repo:
 # set NETPLUGIN_OWNER (default contiv) and NETPLUGIN_BRANCH make variables
 # to compile locally
 # e.g. make NETPLUGIN_OWNER=contiv NETPLUGIN_BRANCH=master
-prepare-netplugin-tarball:
-	@scripts/prepare_netplugin_tarball.sh
+prepare-netplugin-artifacts:
+	@./scripts/prepare_netplugin_artifacts.sh
 
 assemble-build:
-	@bash ./scripts/build.sh
+	@./scripts/build.sh
 
 # build creates a release package for contiv.
 # It uses a pre-built image specified by BUILD_VERSION.
-build: download-ansible-repo prepare-netplugin-tarball assemble-build
+build: download-ansible-repo prepare-netplugin-artifacts assemble-build
 
 # ansible-image creates the docker image for ansible container
 # It uses the version specified by BUILD_VERSION or creates an image with the latest tag.
