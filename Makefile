@@ -16,7 +16,7 @@ export CONTIV_NETPLUGIN_VERSION := $(NETPLUGIN_OWNER)-$(NETPLUGIN_BRANCH)
 endif
 export CONTIV_V2PLUGIN_VERSION ?= $(DEFAULT_DOWNLOAD_CONTIV_VERSION)
 export CONTIV_NETPLUGIN_TARBALL_NAME := netplugin-$(CONTIV_NETPLUGIN_VERSION).tar.bz2
-export CONTIV_ANSIBLE_COMMIT ?= 7aebefc806b1ddc56f73c5087f0d47d0e88a2f84
+export CONTIV_ANSIBLE_COMMIT ?= 8e20f56d541af8bc7a3ecbde0d9c64fa943812ed
 export CONTIV_ANSIBLE_OWNER ?= contiv
 
 # this is the classic first makefile target, and it's also the default target
