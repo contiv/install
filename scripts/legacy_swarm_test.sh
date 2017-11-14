@@ -24,16 +24,12 @@ if [ "$ssh_key" == "" ]; then
 	ssh_key=$(vagrant ssh-config legacy-swarm-master | grep IdentityFile | awk '{print $2}' | xargs)
 fi
 popd
-# Extract and launch the installer
-mkdir -p release
-cd release
-if [ ! -f "${install_version}.tgz" ]; then
-	# For release builds, get the build from github releases
-	curl -L -O https://github.com/contiv/install/releases/download/${BUILD_VERSION}/${install_version}.tgz
-fi
 
-tar oxf $install_version.tgz
-cd $install_version
+./scripts/unpack-installer.sh
+
+# Extract and launch the installer
+
+cd release/$install_version
 ./install/ansible/install_swarm.sh -f ../../cluster/.cfg_legacy-swarm.yaml -e $ssh_key -u $user -i
 
 # Wait for CONTIV to start for up to 10 minutes
@@ -46,7 +42,7 @@ for i in {0..20}; do
 		cat <<EOF
   NOTE: Because the Contiv Admin Console is using a self-signed certificate for this demo,
   you will see a security warning when the page loads.  You can safely dismiss it.
-  
+
   You can access the Contiv master node with:
     cd cluster && vagrant ssh legacy-swarm-master
 EOF

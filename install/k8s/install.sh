@@ -276,9 +276,17 @@ echo "Applying contiv installation"
 grep -q -F "netmaster" /etc/hosts || echo "$netmaster netmaster" >>/etc/hosts
 echo "To customize the installation press Ctrl+C and edit $contiv_yaml."
 sleep 5
-chmod +x ./netctl
-rm -f /usr/bin/netctl
-cp ./netctl /usr/bin/
+
+# extract netctl from netplugin container
+echo "Extracting netctl from netplugin container"
+netplugin_version=$(
+    sed '/contiv_network_version/!d;s/.*\: \?"\(.*\)".*/\1/' \
+        install/ansible/env.json)
+docker rm netplugin-tmp >/dev/null 2>/dev/null || :
+c_id=$(docker create --name netplugin-tmp contiv/netplugin:$netplugin_version)
+docker cp ${c_id}:/contiv/bin/netctl /usr/bin
+docker rm ${c_id}
+
 # Install Contiv
 $kubectl apply -f $contiv_yaml
 

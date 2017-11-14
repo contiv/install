@@ -11,6 +11,7 @@ UBUNTU = 'ubuntu'.freeze
 CENTOS = 'centos'.freeze
 RHEL = 'rhel7'.freeze
 
+BOX_VERSION = ENV['BOX_VERSION'] || '1707.01'.freeze
 HOST_SHARED_FOLDER = './export/'.freeze
 GUEST_SHARED_FOLDER = '/shared'.freeze
 # Different orchestration platforms we support
@@ -206,6 +207,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           c.vm.box_version = '0.10.1'
         else
           c.vm.box = 'centos/7'
+          c.vm.box_version = BOX_VERSION
         end
         config.ssh.insert_key = false
       end
