@@ -4,6 +4,7 @@
 # * CONTIV_INSTALLER_VERSION - sets the tarball artifact filenames
 # * CONTIV_NETPLUGIN_VERSION - updates config files to locate contiv tarball
 # * CONTIV_V2PLUGIN_VERSION - which v2plugin version to download during install
+# * CONTIV_ACI_GW_VERSION - which aci_gw version to download during install
 
 set -xeuo pipefail
 
