@@ -5,7 +5,7 @@ export CONTIV_INSTALLER_VERSION ?= $(BUILD_VERSION)
 # downloaded and built assets intended to go in installer by build.sh
 export CONTIV_ARTIFACT_STAGING := $(PWD)/artifact_staging
 # some assets are retrieved from GitHub, this is the default version to fetch
-export DEFAULT_DOWNLOAD_CONTIV_VERSION := 1.1.5
+export DEFAULT_DOWNLOAD_CONTIV_VERSION := 1.1.7
 export CONTIV_ACI_GW_VERSION ?= latest
 export NETPLUGIN_OWNER ?= contiv
 # setting NETPLUGIN_BRANCH compiles that commit on demand,
