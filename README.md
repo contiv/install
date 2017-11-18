@@ -39,7 +39,7 @@ Note: The full image contains only Contiv components.
 * To install Contiv v2plugin:<br> `./install/ansible/install_swarm.sh -f cfg.yml -e <ssh key> -u <username> -p`
 
 * Example host config files are available at install/ansible/cfg.yml and install/ansible/aci_cfg.yml
-* To see additional install options and examples, run <br>`./install/ansible/install_swarm.sh -h`.
+* To see additional install options and examples, such as adding arguments to ansible for verbose output and proxy settings, run <br>`./install/ansible/install_swarm.sh -h`.
 
 ### Removing Contiv
 
@@ -53,6 +53,7 @@ If you need to remove Contiv from Docker Swarm and return to your original state
 * To uninstall Contiv v2plugin:<br>
 `./install/ansible/uninstall_swarm.sh -f cfg.yml -e <ssh key> -u <username> -p`
 * Note: Adding the `-r` flag, will cleanup any Contiv state.
+* To see additional install options and examples, such as adding arguments to ansible for verbose output and proxy settings, run <br>`./install/ansible/uninstall_swarm.sh -h`.
 
 ## Kubernetes Installation
 
