@@ -58,12 +58,13 @@ If you need to remove Contiv from Docker Swarm and return to your original state
 
 ### Prerequisites
 
-* Kubernetes 1.4.x, 1.5.x and 1.6.2+ are supported with the following instructions.
+* Kubernetes 1.4.x, 1.5.x, 1.6.2+, and 1.8.2+ are supported with the following instructions.
 * CentOS 7.x operating system
 * Install Kubernetes:
   1. kubeadm installs the latest Kubernetes version. <br>
      For Kubernetes 1.4, see an example script [here.](https://github.com/contiv/install/blob/master/cluster/k8s1.4/k8smaster.sh)
      For Kubernetes 1.6, see an example script [here.](https://github.com/contiv/install/blob/master/cluster/k8s1.6/k8smaster.sh)
+     For Kubernetes 1.8, see an example script [here.](https://github.com/contiv/install/blob/master/cluster/k8s1.8/k8smaster.sh)
   1. Replace step (3/4) in the kubeadm install guide with the following Contiv Installation Instructions. Contiv installation can be done after completing step (4/4).
   1. Instructions to install Kubernetes are available [here.](http://kubernetes.io/docs/getting-started-guides/kubeadm/)
   1. **Kubernetes 1.4 NOTE:** A recent kubeadm update has rendered the latest kubeadm unable to install Kubernetes 1.4. To workaround this issue, please use kubeadm version 1.6.0-0.alpha or earlier.

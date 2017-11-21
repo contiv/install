@@ -1,0 +1,86 @@
+# Gives Prometheus permission to share the cluster
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: prometheus
+  namespace: kube-system
+rules:
+- apiGroups: [""]
+  resources:
+  - pods
+  verbs: ["get", "list", "watch"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+---
+# Prometheus is a process and hence needs service account access
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: kube-system
+# Binds Prometheus to the kube-system namespace
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+  namespace: kube-system
+# Deploy prometheus as a replicaset with one container
+---
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  name: contiv-prometheus
+  namespace: kube-system
+  labels:
+    k8s-app: contiv-prometheus
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: contiv-prometheus
+      labels:
+        k8s-app: contiv-prometheus
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      containers:
+        - name: contiv-prometheus
+          image: prom/prometheus
+          volumeMounts:
+            - mountPath: /etc/prometheus
+              name: var-contiv
+      volumes:
+        - name: var-contiv
+          hostPath:
+            path: /var/contiv
+      serviceAccountName: prometheus
+# Expose prometheus as a service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: kube-system
+spec:
+  type: NodePort 
+  selector:
+    k8s-app: contiv-prometheus 
+  ports:
+    - protocol: TCP
+      port: 9090
+      nodePort: 32700
+
