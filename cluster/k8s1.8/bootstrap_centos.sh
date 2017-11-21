@@ -18,6 +18,8 @@ EOF
 
 setenforce 0
 
+swapoff -a
+
 yum install -y docker kubelet-1.8.2 kubeadm-1.8.2 kubectl-1.8.2 kubernetes-cni-1.8.2 ntp
 
 systemctl enable docker && systemctl start docker
