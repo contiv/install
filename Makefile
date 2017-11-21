@@ -21,7 +21,7 @@ export CONTIV_ANSIBLE_COMMIT ?= 8e20f56d541af8bc7a3ecbde0d9c64fa943812ed
 export CONTIV_ANSIBLE_OWNER ?= contiv
 # TODO(chrisplo): restore the normal default after 1.1.8 has been pushed
 #export CONTIV_ANSIBLE_IMAGE ?= contiv/install:$(DEFAULT_DOWNLOAD_CONTIV_VERSION)
-export CONTIV_ANSIBLE_IMAGE ?= contiv/install:contiv/install:1.1.7-bash-netcat
+export CONTIV_ANSIBLE_IMAGE ?= contiv/install:1.1.7-bash-netcat
 
 # this is the classic first makefile target, and it's also the default target
 # run when `make` is invoked with no specific target.
