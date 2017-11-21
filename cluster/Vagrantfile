@@ -4,7 +4,7 @@ require 'rubygems'
 require 'fileutils'
 require 'yaml'
 
-DEFAULT_K8S_VERSION = 'v1.6.5'.freeze
+DEFAULT_K8S_VERSION = 'v1.8.4'.freeze
 
 # Guest OS versions for testing
 UBUNTU = 'ubuntu'.freeze
@@ -32,6 +32,7 @@ k8s_ver = ENV['CONTIV_K8S_VERSION'] || DEFAULT_K8S_VERSION
 orc_path = case k8s_ver
            when /^v1\.[45]\./ then 'k8s1.4/'
            when /^v1\.[67]\./ then 'k8s1.6/'
+           when /^v1\.[8]\./ then 'k8s1.8/'
            else
              raise "unsupported k8s version: #{k8s_ver}"
            end
