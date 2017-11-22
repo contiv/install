@@ -5,7 +5,7 @@ export CONTIV_INSTALLER_VERSION ?= $(BUILD_VERSION)
 # downloaded and built assets intended to go in installer by build.sh
 export CONTIV_ARTIFACT_STAGING := $(PWD)/artifact_staging
 # some assets are retrieved from GitHub, this is the default version to fetch
-export DEFAULT_DOWNLOAD_CONTIV_VERSION := 1.1.5
+export DEFAULT_DOWNLOAD_CONTIV_VERSION := 1.1.7
 export CONTIV_ACI_GW_VERSION ?= latest
 export NETPLUGIN_OWNER ?= contiv
 # setting NETPLUGIN_BRANCH compiles that commit on demand,
@@ -19,6 +19,9 @@ export CONTIV_V2PLUGIN_VERSION ?= $(DEFAULT_DOWNLOAD_CONTIV_VERSION)
 export CONTIV_NETPLUGIN_TARBALL_NAME := netplugin-$(CONTIV_NETPLUGIN_VERSION).tar.bz2
 export CONTIV_ANSIBLE_COMMIT ?= 8e20f56d541af8bc7a3ecbde0d9c64fa943812ed
 export CONTIV_ANSIBLE_OWNER ?= contiv
+# TODO(chrisplo): restore the normal default after 1.1.8 has been pushed
+#export CONTIV_ANSIBLE_IMAGE ?= contiv/install:$(DEFAULT_DOWNLOAD_CONTIV_VERSION)
+export CONTIV_ANSIBLE_IMAGE ?= contiv/install:1.1.7-bash-netcat
 
 # this is the classic first makefile target, and it's also the default target
 # run when `make` is invoked with no specific target.

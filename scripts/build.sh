@@ -18,7 +18,7 @@ fi
 
 pull_images=${CONTIV_CI_HOST:-"false"}
 aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
-ansible_image_version=${CONTIV_ANSIBLE_IMAGE_VERSION:-$DEFAULT_DOWNLOAD_CONTIV_VERSION}
+ansible_image_version=${CONTIV_ANSIBLE_IMAGE:-contiv/install:$DEFAULT_DOWNLOAD_CONTIV_VERSION}
 auth_proxy_version=${CONTIV_API_PROXY_VERSION:-$DEFAULT_DOWNLOAD_CONTIV_VERSION}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
 etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
@@ -52,7 +52,7 @@ cp -a "${CONTIV_ARTIFACT_STAGING}/ansible" ${output_dir}/
 files=$(find $output_dir -type f -name "*.yaml" -or -name "*.sh" -or -name "*.json")
 sed -i.bak 's/__ACI_GW_VERSION__/'"$aci_gw_version"'/g' $files
 sed -i.bak 's/__API_PROXY_VERSION__/'"$auth_proxy_version"'/g' $files
-sed -i.bak 's/__CONTIV_INSTALL_VERSION__/'"$ansible_image_version"'/g' $files
+sed -i.bak 's#__CONTIV_INSTALL_VERSION__#'"$ansible_image_version"'#g' $files
 sed -i.bak 's/__CONTIV_VERSION__/'"$CONTIV_NETPLUGIN_VERSION"'/g' $files
 sed -i.bak 's/__DOCKER_VERSION__/'"$docker_version"'/g' $files
 sed -i.bak 's/__ETCD_VERSION__/'"$etcd_version"'/g' $files
