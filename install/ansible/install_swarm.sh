@@ -42,6 +42,7 @@ Additional Options:
 -d   string     Forwarding mode (“routing” or “bridge”). Default mode is “bridge”
 -c   string
 -k   string
+-a   string     Additonal ansible arguments such as "-v --ssh-common-args=\"-o ProxyCommand='nc -x 192.168.2.1 %h %p'\""
 
 Advanced Options:
 -v   string     ACI Image (default is contiv/aci-gw:latest). Use this to specify a specific version of the ACI Image.
@@ -79,7 +80,7 @@ while getopts ":f:n:a:e:ipm:d:v:u:c:k:s:" opt; do
 			netmaster=$OPTARG
 			;;
 		a)
-			ans_opts=$OPTARG
+			ans_opts="$OPTARG"
 			;;
 		e)
 			ans_key=$OPTARG
@@ -145,9 +146,9 @@ if [[ -f $ans_key ]]; then
 fi
 
 if [ "$ans_opts" == "" ]; then
-	ans_opts=" --private-key $def_ans_key -u $ans_user"
+	ans_opts="--private-key $def_ans_key -u $ans_user"
 else
-	ans_opts=$(printf '%q', $ans_opts)" --private-key $def_ans_key -u $ans_user"
+    ans_opts+=" --private-key $def_ans_key -u $ans_user"
 fi
 
 # Generate SSL certs for auth proxy
@@ -161,7 +162,7 @@ if [[ ! -f "$host_tls_cert" || ! -f "$host_tls_key" ]]; then
 fi
 
 echo "Starting the installer container"
-image_name="contiv/install:__CONTIV_INSTALL_VERSION__"
+image_name="__CONTIV_INSTALL_VERSION__"
 mounts[0]="-v"
 mounts[1]="$(pwd)/install:/install:Z"
 mounts[2]="-v"
@@ -170,4 +171,4 @@ mounts[4]="-v"
 mounts[5]="$src_conf_path:$container_conf_path:Z"
 mounts[6]="-v"
 mounts[7]="$(pwd)/contiv_cache:/var/contiv_cache:Z"
-docker run --rm --net=host "${mounts[@]}" $image_name sh -c "./install/ansible/install.sh $netmaster_param -a \"$ans_opts\" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param $cluster_param $v2plugin_param"
+docker run --rm --net=host "${mounts[@]}" $image_name ./install/ansible/install.sh $netmaster_param -a "$ans_opts" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param $cluster_param $v2plugin_param

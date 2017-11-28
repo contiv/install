@@ -1,6 +1,30 @@
 # Automated releases
 TBD
 
+# Testing installer builds of any netplugin branch
+Normally, the installer requires the contiv netplugin version to be a released version hosted on github, as it pulls that archive down either during install or caches it prior to install.
+
+Instead, to create an installer for the legacy docker swarm of any branch of contiv, additionally set these two environment variables:
+
+* NETPLUGIN_BRANCH - the branch to checkout, compile, and archive
+* NETPLUGIN_OWNER (if not contiv) - the username for the netplugin fork
+
+This will only provide a "full" installer with the netplugin archive in `contiv_cache`
+
+Other types of installs such as v2plugin do not yet support builds targeting specific branches, they only support building installers for released versions of netplugin.
+
+#### Example:
+
+```
+NETPLUGIN_BRANCH=v2plugin_local_versioned NETPLUGIN_OWNER=chrisplo make build
+```
+
+Can produce netplugin binary archive at
+`contiv-devbuild/contiv_cache/netplugin-ca1b582.tar.bz2`
+and a symlink in the same directory to that archive named `netplugin-chrisplo-v2plugin_local_versioned.tar.bz2`
+
+That archive will be used for netplugin binaries instead of a released archive hosted on github.
+
 # Manual releases
 1. Check out the right branch and the right commit. This is necessary
 when not releasing from the HEAD of master.

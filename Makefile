@@ -18,6 +18,11 @@ export CONTIV_NETPLUGIN_VERSION := $(NETPLUGIN_OWNER)-$(NETPLUGIN_BRANCH)
 export CONTIV_V2PLUGIN_VERSION ?= $(NETPLUGIN_OWNER)-$(NETPLUGIN_BRANCH)
 endif
 export CONTIV_NETPLUGIN_TARBALL_NAME := netplugin-$(CONTIV_NETPLUGIN_VERSION).tar.bz2
+export CONTIV_ANSIBLE_COMMIT ?= 8e20f56d541af8bc7a3ecbde0d9c64fa943812ed
+export CONTIV_ANSIBLE_OWNER ?= contiv
+# TODO(chrisplo): restore the normal default after 1.1.8 has been pushed
+#export CONTIV_ANSIBLE_IMAGE ?= contiv/install:$(DEFAULT_DOWNLOAD_CONTIV_VERSION)
+export CONTIV_ANSIBLE_IMAGE ?= contiv/install:1.1.7-bash-netcat
 export CONTIV_V2PLUGIN_TARBALL_NAME := v2plugin-$(CONTIV_V2PLUGIN_VERSION).tar.gz
 export CONTIV_ANSIBLE_COMMIT ?= build_v2plugin_on_demand
 export CONTIV_ANSIBLE_OWNER ?= chrisplo

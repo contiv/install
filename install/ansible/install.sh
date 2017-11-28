@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -xeuo pipefail
 
@@ -43,7 +43,14 @@ while getopts ":n:a:im:d:v:ps:" opt; do
 		netmaster=$OPTARG
 		;;
 	a)
-		ans_opts=$OPTARG
+		# make a bash array from the ansible argument
+		# it interprets single and double quotes from CLI as you might expect
+		# creating proper bash "words" for eventually passing to ansible
+		# by letting the array declaration do all the interpreting
+		# note: ans_opts=($OPTARG) and ans_opts("$OPTARG") do not work
+		# Example:
+		#   "-v --ssh-common-args=\"-o ProxyCommand='nc -x 192.168.2.1 %h %p'\"
+		declare -a 'ans_opts=('"$OPTARG"')'
 		;;
 	i)
 		install_scheduler=true
@@ -103,7 +110,7 @@ env_file=install/ansible/env.json
 # Verify ansible can reach all hosts
 
 echo "Verifying ansible reachability"
-ansible all -vvv $ans_opts -i $host_inventory -m setup -a 'filter=ansible_distribution*' | tee $inventory_log
+ansible all "${ans_opts[@]}" -i $host_inventory -m setup -a 'filter=ansible_distribution*' | tee $inventory_log
 if egrep -q 'FAIL|UNREACHABLE' $inventory_log; then
 	echo "WARNING Some of the hosts are not accessible via passwordless SSH"
 	echo " "
@@ -118,7 +125,7 @@ netmaster_control_if=$(grep -A10 $netmaster $contiv_config | grep -m 1 control |
 # Get the ansible node
 node_name=$(grep $netmaster $host_inventory | awk '{print $1}' | xargs)
 # Get the service VIP for netmaster for the control interface
-service_vip=$(ansible $node_name -m setup $ans_opts -i $host_inventory | grep -A 100 ansible_$netmaster_control_if | grep -A 4 ipv4 | grep address | awk -F \" '{print $4}' | xargs)
+service_vip=$(ansible $node_name -m setup "${ans_opts[@]}" -i $host_inventory | grep -A 100 ansible_$netmaster_control_if | grep -A 4 ipv4 | grep address | awk -F \" '{print $4}' | xargs)
 
 if [ "$service_vip" == "" ]; then
 	service_vip=$netmaster
@@ -180,7 +187,7 @@ log_file="/var/contiv/$log_file_name"
 echo "Ansible extra vars from env.json:"
 cat "$env_file"
 # run playbook
-ansible-playbook $ans_opts -i "$host_inventory" -e@"$env_file" $ansible_path/install_plays.yml | tee $log_file
+ansible-playbook "${ans_opts[@]}" -i "$host_inventory" -e@"$env_file" $ansible_path/install_plays.yml | tee $log_file
 rm -rf "$env_file.bak"
 
 unreachable=$(grep "PLAY RECAP" -A 9999 $log_file | awk -F "unreachable=" '{print $2}' | awk '{print $1}' | grep -v "0" | xargs)
