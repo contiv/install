@@ -171,4 +171,5 @@ mounts[4]="-v"
 mounts[5]="$src_conf_path:$container_conf_path:Z"
 mounts[6]="-v"
 mounts[7]="$(pwd)/contiv_cache:/var/contiv_cache:Z"
+set -x
 docker run --rm --net=host "${mounts[@]}" $image_name ./install/ansible/install.sh $netmaster_param -a "$ans_opts" $install_scheduler -m $contiv_network_mode -d $fwd_mode $aci_param $cluster_param $v2plugin_param
