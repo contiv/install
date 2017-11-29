@@ -106,6 +106,13 @@ if [[ -L "${plugin_tball}" ]]; then
 fi
 cp "${plugin_tball}" "${binary_cache}/"
 
+# copy v2plugin assets if built locally on branch
+if [ -n "${NETPLUGIN_BRANCH:-}" ]; then
+    cp "${CONTIV_ARTIFACT_STAGING}"/${CONTIV_V2PLUGIN_TARBALL_NAME} \
+        "${binary_cache}/"
+    cp "${CONTIV_ARTIFACT_STAGING}/config.json" "${binary_cache}/"
+fi
+
 env_file=$output_dir/install/ansible/env.json
 sed -i.bak 's#__AUTH_PROXY_LOCAL_INSTALL__#true#g' "$env_file"
 sed -i.bak 's#__CONTIV_NETWORK_LOCAL_INSTALL__#true#g' "$env_file"

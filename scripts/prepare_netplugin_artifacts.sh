@@ -43,11 +43,16 @@ cd $netplugin_tmp_dir/netplugin
 declare +x BUILD_VERSION
 # this is most likely to be just SHA because we pulled only single commit
 NETPLUGIN_VERSION=$(./scripts/getGitVersion.sh)
-BUILD_VERSION=${NETPLUGIN_VERSION} make tar
+BUILD_VERSION=${NETPLUGIN_VERSION} make tar host-pluginfs-create
 
 # move the netplugin tarball to the staging directory for the installer
-mv netplugin-${NETPLUGIN_VERSION}.tar.bz2 \
-    "${CONTIV_ARTIFACT_STAGING}/"
-# create a link so other scripts can find the file without knowing the SHA
+mv netplugin-${NETPLUGIN_VERSION}.tar.bz2 "${CONTIV_ARTIFACT_STAGING}/"
+# move the v2plugin tarball to the staging directory for the installer
+mv install/v2plugin/v2plugin-${NETPLUGIN_VERSION}.tar.gz "${CONTIV_ARTIFACT_STAGING}/"
+# copy the container's config.json needed to create the v2plugin
+cp install/v2plugin/config.json "${CONTIV_ARTIFACT_STAGING}/"
+
+# create links so other scripts can find the archives without knowing the SHA
 cd "${CONTIV_ARTIFACT_STAGING}"
 ln -sf netplugin-${NETPLUGIN_VERSION}.tar.bz2 $CONTIV_NETPLUGIN_TARBALL_NAME
+ln -sf v2plugin-${NETPLUGIN_VERSION}.tar.gz $CONTIV_V2PLUGIN_TARBALL_NAME
