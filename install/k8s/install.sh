@@ -317,7 +317,7 @@ set +e
 for i in {0..150}; do
 	sleep 2
 	# check contiv pods
-	$kubectl get pods -n kube-system | grep -v "Running" | grep -q ^contiv  && continue
+	$kubectl get pods -n kube-system --request-timeout=1s | grep -v "Running" | grep -q ^contiv  && continue
 	# check netplugin status
 	curl -s localhost:9090/inspect/driver | grep -wq FwdMode || continue
 	break
