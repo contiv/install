@@ -24,8 +24,8 @@ export CONTIV_ANSIBLE_OWNER ?= contiv
 #export CONTIV_ANSIBLE_IMAGE ?= contiv/install:$(DEFAULT_DOWNLOAD_CONTIV_VERSION)
 export CONTIV_ANSIBLE_IMAGE ?= contiv/install:1.1.7-bash-netcat
 export CONTIV_V2PLUGIN_TARBALL_NAME := v2plugin-$(CONTIV_V2PLUGIN_VERSION).tar.gz
-export CONTIV_ANSIBLE_COMMIT ?= build_v2plugin_on_demand
-export CONTIV_ANSIBLE_OWNER ?= chrisplo
+export CONTIV_ANSIBLE_COMMIT ?= 8e20f56d541af8bc7a3ecbde0d9c64fa943812ed
+export CONTIV_ANSIBLE_OWNER ?= contiv
 
 # this is the classic first makefile target, and it's also the default target
 # run when `make` is invoked with no specific target.
