@@ -17,10 +17,8 @@ fi
 k8sversion=$($kubectl version --short | grep "Server Version")
 if [[ "$k8sversion" == *"v1.4"* ]] || [[ "$k8sversion" == *"v1.5"* ]]; then
 	k8sfolder="k8s1.4"
-elif [[ "$k8sversion" == *"v1.6"* ]] || [[ "$k8sversion" == *"v1.7"* ]]; then
-	k8sfolder="k8s1.6"
 else
-    k8sfolder="k8s1.8"
+    k8sfolder="rbac"
 fi
 
 #
