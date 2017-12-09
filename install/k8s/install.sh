@@ -327,6 +327,18 @@ done
 
 set -e
 
+echo "Contiv pods are ready. Creating test pod..."
+# create a test pod and ensure it is running
+$kubectl run -it test-pod --image=contiv/alpine /bin/sh
+
+for i in {0..15}; do
+    sleep 2
+    $kubectl get pods | grep test-pod | grep -v "Running" && continue
+    break
+done
+
+[[ $i -ge 15 ]] && error_ret "unable to run pod !!"
+
 
 echo "Installation is complete"
 echo "========================================================="
