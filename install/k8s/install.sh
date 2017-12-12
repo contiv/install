@@ -14,19 +14,13 @@ then
 else
     kubectl="kubectl"
 fi
-k8sversion=$($kubectl version --short | grep "Server Version")
-if [[ "$k8sversion" == *"v1.4"* ]] || [[ "$k8sversion" == *"v1.5"* ]]; then
-	k8sfolder="k8s1.4"
-else
-    k8sfolder="rbac"
-fi
 
 #
 # The following parameters are user defined - and vary for each installation
 #
 
 # If an etcd or consul cluster store is not provided, we will start an etcd instance
-cluster_store=""
+cluster_store_urls=""
 
 # Netmaster address
 netmaster=""
@@ -64,7 +58,10 @@ Mandatory Options:
 -n   string     DNS name/IP address of the host to be used as the net master service VIP.
 
 Additional Options:
--s   string     External cluster store to be used to store contiv data. This can be an etcd or consul server.
+
+-e   string     external etcd endpoints for cluster store
+-c   string     external consul endpoints for cluster store
+-s   string     (DEPRECATED) External cluster store to be used to store contiv data. This can be an etcd or consul server.
 -v   string     Data plane interface
 -w   string     Forwarding mode (“routing” or “bridge”). Default mode is “bridge”
 -c   string     Configuration file for netplugin
@@ -79,7 +76,7 @@ Additional Options for ACI:
 -p   string     Password to connect to the APIC
 -l   string     APIC leaf node
 -d   string     APIC physical domain
--e   string     APIC EPG bridge domain
+-b   string     APIC EPG bridge domain
 -m   string     APIC contracts unrestricted mode
 
 Examples:
@@ -121,11 +118,32 @@ error_ret() {
 	exit 1
 }
 
-while getopts ":s:n:v:w:t:k:a:u:p:l:d:e:m:y:z:g:i:" opt; do
+while getopts ":c:e:s:n:v:w:t:k:a:u:p:l:d:b:m:y:z:g:i:" opt; do
 	case $opt in
+        e)
+            # etcd endpoint option
+            cluster_store_type=etcd
+            cluster_store_urls=$OPTARG
+            install_etcd=false
+            ;;
+        c)
+            # consul endpoint option
+            cluster_store_type=consul
+            cluster_store_urls=$OPTARG
+            install_etcd=false
+            ;;
 		s)
-			cluster_store=$OPTARG
-			;;
+            # backward compatibility
+            echo "-s option has been deprecated, use -e or -c instead"
+            local cluster_store=$OPTARG
+            if [[ "$cluster_store" =~ ^etcd://.+ ]]; then
+                cluster_store_type=etcd
+                cluster_store_urls=$(echo $cluster_store | sed s/etcd/http/)
+            elif [[ "$cluster_store" =~ ^consul://.+ ]]; then
+                cluster_store_type=consul
+                cluster_store_urls=$(echo $cluster_store | sed s/consul/http/)
+            fi
+            ;;
 		n)
 			netmaster=$OPTARG
 			;;
@@ -156,7 +174,7 @@ while getopts ":s:n:v:w:t:k:a:u:p:l:d:e:m:y:z:g:i:" opt; do
 		d)
 			apic_phys_domain=$OPTARG
 			;;
-		e)
+		b)
 			apic_epg_bridge_domain=$OPTARG
 			;;
 		m)
@@ -207,16 +225,20 @@ contiv_yaml="./.contiv.yaml"
 rm -f $contiv_yaml
 
 # Create the new config file from the templates
-contiv_yaml_template="./install/k8s/$k8sfolder/contiv.yaml"
-contiv_etcd_template="./install/k8s/$k8sfolder/etcd.yaml"
-contiv_aci_gw_template="./install/k8s/$k8sfolder/aci_gw.yaml"
+contiv_yaml_template="./install/k8s/configs/contiv.yaml"
+contiv_etcd_template="./install/k8s/configs/etcd.yaml"
+contiv_aci_gw_template="./install/k8s/configs/aci_gw.yaml"
 
 cat $contiv_yaml_template >>$contiv_yaml
 
-if [ "$cluster_store" = "" ]; then
+if [ "$cluster_store_urls" = "" ]; then
 	cat $contiv_etcd_template >>$contiv_yaml
-else
-	sed -i.bak "s#cluster_store:.*#cluster_store: \"$cluster_store\"#g" $contiv_yaml
+elif [ "$cluster_store_type" = "etcd" ]; then
+	sed -i.bak "s#contiv_etcd:.*#contiv_etcd: \"$cluster_store_urls\"#g" $contiv_yaml
+elif [ "$cluster_store_type" = "consul" ]; then
+    sed -i.bak "s#contiv_etcd:.*#contiv_consul: \"$cluster_store_urls\"#g" $contiv_yaml
+    # change auth_proxy
+    sed -i.bak "s#value: etcd#value: consul#g" $contiv_yaml
 fi
 
 if [ "$apic_url" != "" ]; then
@@ -304,14 +326,8 @@ done
 
 set -e
 
-if [ "$fwd_mode" == "routing" ]; then
-	netctl global set --fwd-mode $fwd_mode || true
-	netctl net ls -q | grep -q -w "contivh1" || netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
-
-	# Restart netplugin to allow fwdMode change
-	$kubectl -n kube-system delete daemonset contiv-netplugin
-	$kubectl apply -f $contiv_yaml
-fi
+# fwd mode has to be routing to make it work with vxlan
+netctl net ls -q | grep -q -w "contivh1" || netctl net create -n infra -s $infra_subnet -g $infra_gateway contivh1
 
 set +e
 for i in {0..150}; do

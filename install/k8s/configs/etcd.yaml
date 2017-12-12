@@ -1,0 +1,99 @@
+---
+kind: DaemonSet
+apiVersion: extensions/v1beta1
+metadata:
+  name: contiv-etcd
+  namespace: kube-system
+  labels:
+    k8s-app: contiv-etcd
+spec:
+  selector:
+    matchLabels:
+      k8s-app: contiv-etcd
+  template:
+    metadata:
+      labels:
+        k8s-app: contiv-etcd
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      hostNetwork: true
+      hostPID: true
+      nodeSelector:
+        node-role.kubernetes.io/master: ''
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      initContainers:
+        - name: contiv-etcd-init
+          image: ferest/etcd-initer:latest
+          imagePullPolicy: Always
+          env:
+            - name: ETCD_INIT_ARGSFILE
+              value: /etc/contiv/etcd/contiv-etcd-args
+            - name: ETCD_INIT_LISTEN_PORT
+              value: '6666'
+            - name: ETCD_INIT_PEER_PORT
+              value: '6667'
+            - name: ETCD_INIT_CLUSTER
+              value: 'contiv0=http://__NETMASTER_IP__:6667'
+            - name: ETCD_INIT_DATA_DIR
+              value: /var/lib/etcd/contiv-data
+          volumeMounts:
+            - name: contiv-etcd-conf-dir
+              mountPath: /etc/contiv/etcd
+      containers:
+        - name: contiv-etcd
+          image: quay.io/coreos/etcd:__ETCD_VERSION__
+          command:
+            - sh
+            - -c
+            - "/usr/local/bin/etcd $(cat $ETCD_INIT_ARGSFILE)"
+          env:
+            - name: ETCD_INIT_ARGSFILE
+              value: /etc/contiv/etcd/contiv-etcd-args
+          volumeMounts:
+            - name: contiv-etcd-conf-dir
+              mountPath: /etc/contiv/etcd
+            - name: contiv-etcd-data-dir
+              mountPath: /var/lib/etcd/contiv-data
+      volumes:
+        - name: contiv-etcd-data-dir
+          hostPath:
+            path: /var/lib/etcd/contiv-data
+        - name: contiv-etcd-conf-dir
+          hostPath:
+            path: /etc/contiv/etcd
+
+---
+
+kind: DaemonSet
+apiVersion: extensions/v1beta1
+metadata:
+  name: contiv-etcd-proxy
+  namespace: kube-system
+  labels:
+    k8s-app: contiv-etcd-proxy
+spec:
+  selector:
+    matchLabels:
+      k8s-app: contiv-etcd-proxy
+  template:
+    metadata:
+      labels:
+        k8s-app: contiv-etcd-proxy
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+        - name: contiv-etcd-proxy
+          image: quay.io/coreos/etcd:__ETCD_VERSION__
+          env:
+            - name: ETCD_LISTEN_CLIENT_URLS
+              value: 'http://127.0.0.1:6666'
+            - name: ETCD_PROXY
+              value: "on"
+            - name: ETCD_INITIAL_CLUSTER
+              value: 'contiv0=http://__NETMASTER_IP__:6667'

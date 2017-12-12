@@ -37,7 +37,7 @@ error_ret() {
 	exit 1
 }
 
-while getopts ":n:a:im:d:v:ps:" opt; do
+while getopts ":n:a:im:d:v:pe:c:s:" opt; do
 	case $opt in
 	n)
 		netmaster=$OPTARG
@@ -67,8 +67,29 @@ while getopts ":n:a:im:d:v:ps:" opt; do
 	p)
 		contiv_v2plugin_install=true
 		;;
+    e)
+        # etcd endpoint option
+        cluster_store_type=etcd
+        cluster_store_urls=$OPTARG
+        install_etcd=false
+        ;;
+    c)
+        # consul endpoint option
+        cluster_store_type=consul
+        cluster_store_urls=$OPTARG
+        install_etcd=false
+        ;;
 	s)
-		cluster_store=$OPTARG
+        # backward compatibility
+        echo "-s option has been deprecated, use -e or -c instead"
+        local cluster_store=$OPTARG
+        if [[ "$cluster_store" =~ ^etcd://.+ ]]; then
+            cluster_store_type=etcd
+            cluster_store_urls=$(echo $cluster_store | sed s/etcd/http/)
+        elif [[ "$cluster_store" =~ ^consul://.+ ]]; then
+            cluster_store_type=consul
+            cluster_store_urls=$(echo $cluster_store | sed s/consul/http/)
+        fi
 		install_etcd=false
 		;;
 	:)
@@ -88,6 +109,16 @@ mkdir -p "$inventory"
 host_inventory="$inventory/contiv_hosts"
 node_info="$inventory/contiv_nodes"
 
+
+# TODO: use python to generate the inventory
+# This python generated inventory contains
+# 1. groups and host
+# 2. ssh info for each host
+# 3. control interface for each host
+# 4. data interface for each host
+# 5. aci info
+# 6. fwd_mode(bridge/routing), net_mode(vlan/vxlan), contiv_network_mode(standalone/aci)
+# then below sed against env_file set rest of them, they should be combined as one
 ./install/genInventoryFile.py "$contiv_config" "$host_inventory" "$node_info" $contiv_network_mode $fwd_mode
 
 if [ "$netmaster" = "" ]; then
@@ -131,13 +162,15 @@ if [ "$service_vip" == "" ]; then
 	service_vip=$netmaster
 fi
 
-if [ "$cluster_store" == "" ]; then
-	cluster_store="etcd://localhost:2379"
+if [ "$cluster_store" = "" ]; then
+    cluster_store_type="etcd"
+	cluster_store_urls="http://localhost:2379"
 fi
 
 # variables already replaced by build.sh will not pattern match
 sed -i.bak 's#__NETMASTER_IP__#'"$service_vip"'#g' "$env_file"
-sed -i.bak 's#__CLUSTER_STORE__#'"$cluster_store"'#g' "$env_file"
+sed -i.bak 's#__CLUSTER_STORE_TYPE__#'"$cluster_store_type"'#g' "$env_file"
+sed -i.bak 's#__CLUSTER_STORE_URLS__#'"$cluster_store_urls"'#g' "$env_file"
 sed -i.bak 's#__DOCKER_RESET_CONTAINER_STATE__#false#g' "$env_file"
 sed -i.bak 's#__DOCKER_RESET_IMAGE_STATE__#false#g' "$env_file"
 sed -i.bak 's#__ETCD_CLEANUP_STATE__#false#g' "$env_file"
@@ -205,8 +238,6 @@ if [ "$unreachable" = "" ] && [ "$failed" = "" ]; then
 	echo "Please export DOCKER_HOST=tcp://$netmaster:2375 in your shell before proceeding"
 	echo "Contiv UI is available at https://$netmaster:10000"
 	echo "Please use the first run wizard or configure the setup as follows:"
-	echo " Configure forwarding mode (optional, default is bridge)."
-	echo " netctl global set --fwd-mode routing"
 	echo " Configure ACI mode (optional)"
 	echo " netctl global set --fabric-mode aci --vlan-range <start>-<end>"
 	echo " Create a default network"

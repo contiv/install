@@ -64,6 +64,8 @@ class Inventory:
     def writeGlobalVars(self, outFd):
         outFd.write("[" + "all:vars]\n")
         var_line = "fwd_mode={}\n".format(self.fwdMode)
+        net_mode = "vlan" if self.fwdMode == "bridge" else "vxlan"
+        var_line += "net_mode=%s\n" % net_mode
         outFd.write(var_line)
         var_line = "contiv_network_mode={}\n".format(self.networkMode)
         outFd.write(var_line)
@@ -95,7 +97,7 @@ class Inventory:
                 # if no leaf was found, treat as error
                 if leafCount == 0:
                     self.handleMissing("APIC_LEAF_NODES", self.cfgFile, outFd);
-                
+
                 leafStr += "\n"
                 outFd.write(leafStr)
 
