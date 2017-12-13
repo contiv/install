@@ -141,6 +141,7 @@ install-test-legacy-swarm:
 # ci does everything necessary for a Github PR-triggered CI run.
 # currently, this means building a container image and running
 # all of the available tests.
-ci: release-test-swarm-mode release-test-kubeadm release-test-legacy-swarm
+ci: release-test-kubeadm
+ci-old: release-test-swarm-mode release-test-kubeadm release-test-legacy-swarm
 
 .PHONY: all build cluster cluster-destroy release-test-legacy-swarm release-test-swarm-mode release-test-kubeadm release-test-kubelegacy install-test-legacy-swarm install-test-swarm-mode install-test-kubeadm install-test-kube-legacy
