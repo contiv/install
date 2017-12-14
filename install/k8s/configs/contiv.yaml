@@ -226,12 +226,6 @@ spec:
             - mountPath: /var/log/contiv
               name: var-log-contiv
               readOnly: false
-            - mountPath: /etc/kubernetes/pki
-              name: etc-kubernetes-pki
-              readOnly: false
-            - mountPath: /etc/kubernetes/ssl
-              name: etc-kubernetes-ssl
-              readOnly: false
             - mountPath: /opt/cni/bin
               name: cni-bin-dir
               readOnly: false
@@ -252,13 +246,6 @@ spec:
         - name: var-contiv
           hostPath:
             path: /var/contiv
-        - name: etc-kubernetes-pki
-          hostPath:
-            path: /etc/kubernetes/pki
-        - name: etc-kubernetes-ssl
-          hostPath:
-            path: /etc/kubernetes/ssl
-        # Used to install CNI.
         - name: cni-bin-dir
           hostPath:
             path: /opt/cni/bin
