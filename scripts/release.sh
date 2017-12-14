@@ -53,7 +53,7 @@ if [ ! -f ${TAR_FILE} ] || [ ! -f ${TAR_FILE2} ]; then
 fi
 
 set -x
-( (github-release -v release $pre_release -r install -t $BUILD_VERSION -d "**Changelog**<br/>$changelog") \
-	&& ( (github-release -v upload -r install -t $BUILD_VERSION -n $TAR_FILENAME -f $TAR_FILE \
-		&& github-release -v upload -r install -t $BUILD_VERSION -n $TAR_FILENAME2 -f $TAR_FILE2) \
-		|| github-release -v delete -r install -t $BUILD_VERSION)) || exit 1
+( (github-release -v release $pre_release -r install -t $BUILD_VERSION -d "**Changelog**<br/>$changelog") &&
+	( (github-release -v upload -r install -t $BUILD_VERSION -n $TAR_FILENAME -f $TAR_FILE &&
+		github-release -v upload -r install -t $BUILD_VERSION -n $TAR_FILENAME2 -f $TAR_FILE2) ||
+		github-release -v delete -r install -t $BUILD_VERSION)) || exit 1

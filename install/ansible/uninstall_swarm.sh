@@ -65,57 +65,57 @@ mkdir -p "$src_conf_path"
 cluster_param=""
 while getopts ":f:n:a:e:ipm:d:v:u:rgs:" opt; do
 	case $opt in
-		f)
-			cp "$OPTARG" "$host_contiv_config"
-			;;
-		n)
-			netmaster=$OPTARG
-			;;
-		a)
-			ans_opts="$OPTARG"
-			;;
-		e)
-			ans_key=$OPTARG
-			;;
-		u)
-			ans_user=$OPTARG
-			;;
-		m)
-			contiv_network_mode=$OPTARG
-			;;
-		d)
-			fwd_mode=$OPTARG
-			;;
-		v)
-			aci_image=$OPTARG
-			;;
-		s)
-			cluster_param="-s $OPTARG"
-			;;
+	f)
+		cp "$OPTARG" "$host_contiv_config"
+		;;
+	n)
+		netmaster=$OPTARG
+		;;
+	a)
+		ans_opts="$OPTARG"
+		;;
+	e)
+		ans_key=$OPTARG
+		;;
+	u)
+		ans_user=$OPTARG
+		;;
+	m)
+		contiv_network_mode=$OPTARG
+		;;
+	d)
+		fwd_mode=$OPTARG
+		;;
+	v)
+		aci_image=$OPTARG
+		;;
+	s)
+		cluster_param="-s $OPTARG"
+		;;
 
-		i)
-			echo "Uninstalling docker will fail if the uninstallation is being run from a node in the cluster."
-			echo "Press Ctrl+C to cancel the uininstall and start it from a host outside the cluster."
-			echo "Uninstalling Contiv, Docker and Swarm in 20 seconds"
-			sleep 20
-			uninstall_scheduler="-i"
-			;;
-		p)
-			uninstall_v2plugin="-p"
-			;;
-		r)
-			reset_params="-r $reset_params"
-			;;
-		g)
-			reset_params="-g $reset_params"
-			;;
-		:)
-			echo "An argument required for $OPTARG was not passed"
-			usage
-			;;
-		?)
-			usage
-			;;
+	i)
+		echo "Uninstalling docker will fail if the uninstallation is being run from a node in the cluster."
+		echo "Press Ctrl+C to cancel the uininstall and start it from a host outside the cluster."
+		echo "Uninstalling Contiv, Docker and Swarm in 20 seconds"
+		sleep 20
+		uninstall_scheduler="-i"
+		;;
+	p)
+		uninstall_v2plugin="-p"
+		;;
+	r)
+		reset_params="-r $reset_params"
+		;;
+	g)
+		reset_params="-g $reset_params"
+		;;
+	:)
+		echo "An argument required for $OPTARG was not passed"
+		usage
+		;;
+	?)
+		usage
+		;;
 	esac
 done
 
@@ -145,7 +145,7 @@ if [ "$ans_opts" == "" ]; then
 	ans_opts="--private-key $def_ans_key -u $ans_user"
 else
 	# escape each word in the array and put spaces between the words
-    ans_opts+=" --private-key $def_ans_key -u $ans_user"
+	ans_opts+=" --private-key $def_ans_key -u $ans_user"
 fi
 echo "Starting the uninstaller container"
 image_name="__CONTIV_INSTALL_VERSION__"

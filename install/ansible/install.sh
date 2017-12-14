@@ -67,29 +67,29 @@ while getopts ":n:a:im:d:v:pe:c:s:" opt; do
 	p)
 		contiv_v2plugin_install=true
 		;;
-    e)
-        # etcd endpoint option
-        cluster_store_type=etcd
-        cluster_store_urls=$OPTARG
-        install_etcd=false
-        ;;
-    c)
-        # consul endpoint option
-        cluster_store_type=consul
-        cluster_store_urls=$OPTARG
-        install_etcd=false
-        ;;
+	e)
+		# etcd endpoint option
+		cluster_store_type=etcd
+		cluster_store_urls=$OPTARG
+		install_etcd=false
+		;;
+	c)
+		# consul endpoint option
+		cluster_store_type=consul
+		cluster_store_urls=$OPTARG
+		install_etcd=false
+		;;
 	s)
-        # backward compatibility
-        echo "-s option has been deprecated, use -e or -c instead"
-        local cluster_store=$OPTARG
-        if [[ "$cluster_store" =~ ^etcd://.+ ]]; then
-            cluster_store_type=etcd
-            cluster_store_urls=$(echo $cluster_store | sed s/etcd/http/)
-        elif [[ "$cluster_store" =~ ^consul://.+ ]]; then
-            cluster_store_type=consul
-            cluster_store_urls=$(echo $cluster_store | sed s/consul/http/)
-        fi
+		# backward compatibility
+		echo "-s option has been deprecated, use -e or -c instead"
+		local cluster_store=$OPTARG
+		if [[ "$cluster_store" =~ ^etcd://.+ ]]; then
+			cluster_store_type=etcd
+			cluster_store_urls=$(echo $cluster_store | sed s/etcd/http/)
+		elif [[ "$cluster_store" =~ ^consul://.+ ]]; then
+			cluster_store_type=consul
+			cluster_store_urls=$(echo $cluster_store | sed s/consul/http/)
+		fi
 		install_etcd=false
 		;;
 	:)
@@ -108,7 +108,6 @@ inventory_log="/var/contiv/host_inventory.log"
 mkdir -p "$inventory"
 host_inventory="$inventory/contiv_hosts"
 node_info="$inventory/contiv_nodes"
-
 
 # TODO: use python to generate the inventory
 # This python generated inventory contains
@@ -163,7 +162,7 @@ if [ "$service_vip" == "" ]; then
 fi
 
 if [ "$cluster_store" = "" ]; then
-    cluster_store_type="etcd"
+	cluster_store_type="etcd"
 	cluster_store_urls="http://localhost:2379"
 fi
 

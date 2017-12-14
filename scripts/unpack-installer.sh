@@ -28,12 +28,12 @@ rm -rf ${release_name}
 # this tarball has a cache of binary assets
 release_tarball="contiv-full-${BUILD_VERSION}.tgz"
 if [ ! -f "${release_tarball}" ]; then
-    release_tarball="${release_name}.tgz"
+	release_tarball="${release_name}.tgz"
 fi
 if [ ! -f "${release_tarball}" ]; then
-    # For release builds, get the build from github releases
-    echo Downloading ${release_tarball} from GitHub releases
-    curl --fail -L -O https://github.com/contiv/install/releases/download/${BUILD_VERSION}/${release_tarball}
+	# For release builds, get the build from github releases
+	echo Downloading ${release_tarball} from GitHub releases
+	curl --fail -L -O https://github.com/contiv/install/releases/download/${BUILD_VERSION}/${release_tarball}
 fi
 
 echo Unpacking ${release_tarball}

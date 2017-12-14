@@ -8,11 +8,10 @@ if [ $EUID -ne 0 ]; then
 	exit 1
 fi
 
-if [ -e /etc/kubernetes/admin.conf ]
-then
-    kubectl="kubectl --kubeconfig /etc/kubernetes/admin.conf"
+if [ -e /etc/kubernetes/admin.conf ]; then
+	kubectl="kubectl --kubeconfig /etc/kubernetes/admin.conf"
 else
-    kubectl="kubectl"
+	kubectl="kubectl"
 fi
 
 #
@@ -99,7 +98,6 @@ EOF
 	exit 1
 }
 
-
 # this function copies $1 to $2 if the full paths to $1 and $2 (as determined by
 # `realpath`) are different.  this allows people to specify a certificate, key, etc.
 # which was moved into place by a previous installer run.
@@ -120,85 +118,85 @@ error_ret() {
 
 while getopts ":c:e:s:n:v:w:t:k:a:u:p:l:d:b:m:y:z:g:i:" opt; do
 	case $opt in
-        e)
-            # etcd endpoint option
-            cluster_store_type=etcd
-            cluster_store_urls=$OPTARG
-            install_etcd=false
-            ;;
-        c)
-            # consul endpoint option
-            cluster_store_type=consul
-            cluster_store_urls=$OPTARG
-            install_etcd=false
-            ;;
-		s)
-            # backward compatibility
-            echo "-s option has been deprecated, use -e or -c instead"
-            local cluster_store=$OPTARG
-            if [[ "$cluster_store" =~ ^etcd://.+ ]]; then
-                cluster_store_type=etcd
-                cluster_store_urls=$(echo $cluster_store | sed s/etcd/http/)
-            elif [[ "$cluster_store" =~ ^consul://.+ ]]; then
-                cluster_store_type=consul
-                cluster_store_urls=$(echo $cluster_store | sed s/consul/http/)
-            fi
-            ;;
-		n)
-			netmaster=$OPTARG
-			;;
-		v)
-			vlan_if=$OPTARG
-			;;
-		w)
-			fwd_mode=$OPTARG
-			;;
-		t)
-			tls_cert=$OPTARG
-			;;
-		k)
-			tls_key=$OPTARG
-			;;
-		a)
-			apic_url=$OPTARG
-			;;
-		u)
-			apic_username=$OPTARG
-			;;
-		p)
-			apic_password=$OPTARG
-			;;
-		l)
-			apic_leaf_node=$OPTARG
-			;;
-		d)
-			apic_phys_domain=$OPTARG
-			;;
-		b)
-			apic_epg_bridge_domain=$OPTARG
-			;;
-		m)
-			apic_contracts_unrestricted_mode=$OPTARG
-			;;
-		y)
-			aci_key=$OPTARG
-			;;
-		z)
-			apic_cert_dn=$OPTARG
-			;;
-		g)
-			infra_gateway=$OPTARG
-			;;
-		i)
-			infra_subnet=$OPTARG
-			;;
-		:)
-			echo "An argument required for $OPTARG was not passed"
-			usage
-			;;
-		?)
-			usage
-			;;
+	e)
+		# etcd endpoint option
+		cluster_store_type=etcd
+		cluster_store_urls=$OPTARG
+		install_etcd=false
+		;;
+	c)
+		# consul endpoint option
+		cluster_store_type=consul
+		cluster_store_urls=$OPTARG
+		install_etcd=false
+		;;
+	s)
+		# backward compatibility
+		echo "-s option has been deprecated, use -e or -c instead"
+		local cluster_store=$OPTARG
+		if [[ "$cluster_store" =~ ^etcd://.+ ]]; then
+			cluster_store_type=etcd
+			cluster_store_urls=$(echo $cluster_store | sed s/etcd/http/)
+		elif [[ "$cluster_store" =~ ^consul://.+ ]]; then
+			cluster_store_type=consul
+			cluster_store_urls=$(echo $cluster_store | sed s/consul/http/)
+		fi
+		;;
+	n)
+		netmaster=$OPTARG
+		;;
+	v)
+		vlan_if=$OPTARG
+		;;
+	w)
+		fwd_mode=$OPTARG
+		;;
+	t)
+		tls_cert=$OPTARG
+		;;
+	k)
+		tls_key=$OPTARG
+		;;
+	a)
+		apic_url=$OPTARG
+		;;
+	u)
+		apic_username=$OPTARG
+		;;
+	p)
+		apic_password=$OPTARG
+		;;
+	l)
+		apic_leaf_node=$OPTARG
+		;;
+	d)
+		apic_phys_domain=$OPTARG
+		;;
+	b)
+		apic_epg_bridge_domain=$OPTARG
+		;;
+	m)
+		apic_contracts_unrestricted_mode=$OPTARG
+		;;
+	y)
+		aci_key=$OPTARG
+		;;
+	z)
+		apic_cert_dn=$OPTARG
+		;;
+	g)
+		infra_gateway=$OPTARG
+		;;
+	i)
+		infra_subnet=$OPTARG
+		;;
+	:)
+		echo "An argument required for $OPTARG was not passed"
+		usage
+		;;
+	?)
+		usage
+		;;
 	esac
 done
 
@@ -236,9 +234,9 @@ if [ "$cluster_store_urls" = "" ]; then
 elif [ "$cluster_store_type" = "etcd" ]; then
 	sed -i.bak "s#contiv_etcd:.*#contiv_etcd: \"$cluster_store_urls\"#g" $contiv_yaml
 elif [ "$cluster_store_type" = "consul" ]; then
-    sed -i.bak "s#contiv_etcd:.*#contiv_consul: \"$cluster_store_urls\"#g" $contiv_yaml
-    # change auth_proxy
-    sed -i.bak "s#value: etcd#value: consul#g" $contiv_yaml
+	sed -i.bak "s#contiv_etcd:.*#contiv_consul: \"$cluster_store_urls\"#g" $contiv_yaml
+	# change auth_proxy
+	sed -i.bak "s#value: etcd#value: consul#g" $contiv_yaml
 fi
 
 if [ "$apic_url" != "" ]; then
@@ -302,8 +300,9 @@ sleep 5
 # extract netctl from netplugin container
 echo "Extracting netctl from netplugin container"
 netplugin_version=$(
-    sed '/contiv_network_version/!d;s/.*\: \?"\(.*\)".*/\1/' \
-        install/ansible/env.json)
+	sed '/contiv_network_version/!d;s/.*\: \?"\(.*\)".*/\1/' \
+		install/ansible/env.json
+)
 docker rm netplugin-tmp >/dev/null 2>/dev/null || :
 c_id=$(docker create --name netplugin-tmp contiv/netplugin:$netplugin_version)
 docker cp ${c_id}:/contiv/bin/netctl /usr/bin
@@ -316,7 +315,7 @@ set +e
 for i in {0..150}; do
 	sleep 2
 	# check contiv netmaster pods
-	$kubectl get pods -n kube-system | grep -v "Running" | grep -q ^contiv-netmaster  && continue
+	$kubectl get pods -n kube-system | grep -v "Running" | grep -q ^contiv-netmaster && continue
 	# check that netmaster is available
 	netctl tenant ls >/dev/null 2>&1 || continue
 	break
@@ -333,7 +332,7 @@ set +e
 for i in {0..150}; do
 	sleep 2
 	# check contiv pods
-	$kubectl get pods -n kube-system --request-timeout=1s | grep -v "Running" | grep -q ^contiv  && continue
+	$kubectl get pods -n kube-system --request-timeout=1s | grep -v "Running" | grep -q ^contiv && continue
 	# check netplugin status
 	curl -s localhost:9090/inspect/driver | grep -wq FwdMode || continue
 	break
@@ -342,7 +341,6 @@ done
 [[ $i -ge 150 ]] && error_ret "contiv pods are not ready !!"
 
 set -e
-
 
 echo "Installation is complete"
 echo "========================================================="

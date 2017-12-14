@@ -22,19 +22,19 @@ default_net_gw="${DEFAULT_NET:-20.1.1.1}"
 release_local_tarball="contiv-full-${BUILD_VERSION}.tgz"
 
 if [ -f "release/${release_local_tarball}" ]; then
-    # extract docker images under shared mount direcotry
-    tar -xzf release/$release_local_tarball ${install_version}/contiv_cache/*.tar
-    pushd cluster
-        for vm in $(vagrant status |awk '/kubeadm/{print $1}'); do
-            keyfile=$(mktemp)
-            vagrant ssh-config $vm > $keyfile
-            for img in $(ls -1 ../${install_version}/contiv_cache/*.tar); do
-                scp -F $keyfile $img $vm:/tmp/
-                ssh -F $keyfile $vm -- sudo docker load -i /tmp/$(basename $img)
-            done
-            rm -f $keyfile
-        done
-    popd
+	# extract docker images under shared mount direcotry
+	tar -xzf release/$release_local_tarball ${install_version}/contiv_cache/*.tar
+	pushd cluster
+	for vm in $(vagrant status | awk '/kubeadm/{print $1}'); do
+		keyfile=$(mktemp)
+		vagrant ssh-config $vm >$keyfile
+		for img in $(ls -1 ../${install_version}/contiv_cache/*.tar); do
+			scp -F $keyfile $img $vm:/tmp/
+			ssh -F $keyfile $vm -- sudo docker load -i /tmp/$(basename $img)
+		done
+		rm -f $keyfile
+	done
+	popd
 
 	pushd cluster
 	ssh_key=${CONTIV_SSH_KEY:-"$def_key"}

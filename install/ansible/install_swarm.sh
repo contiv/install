@@ -73,53 +73,53 @@ mkdir -p "$src_conf_path"
 cluster_param=""
 while getopts ":f:n:a:e:ipm:d:v:u:c:k:s:" opt; do
 	case $opt in
-		f)
-			cp "$OPTARG" "$host_contiv_config"
-			;;
-		n)
-			netmaster=$OPTARG
-			;;
-		a)
-			ans_opts="$OPTARG"
-			;;
-		e)
-			ans_key=$OPTARG
-			;;
-		u)
-			ans_user=$OPTARG
-			;;
-		m)
-			contiv_network_mode=$OPTARG
-			;;
-		d)
-			fwd_mode=$OPTARG
-			;;
-		v)
-			aci_image=$OPTARG
-			;;
-		s)
-			cluster_param="-s $OPTARG"
-			;;
+	f)
+		cp "$OPTARG" "$host_contiv_config"
+		;;
+	n)
+		netmaster=$OPTARG
+		;;
+	a)
+		ans_opts="$OPTARG"
+		;;
+	e)
+		ans_key=$OPTARG
+		;;
+	u)
+		ans_user=$OPTARG
+		;;
+	m)
+		contiv_network_mode=$OPTARG
+		;;
+	d)
+		fwd_mode=$OPTARG
+		;;
+	v)
+		aci_image=$OPTARG
+		;;
+	s)
+		cluster_param="-s $OPTARG"
+		;;
 
-		i)
-			install_scheduler="-i"
-			;;
-		p)
-			v2plugin_param="-p"
-			;;
-		c)
-			cp "$OPTARG" "$host_tls_cert"
-			;;
-		k)
-			cp "$OPTARG" "$host_tls_key"
-			;;
-		:)
-			echo "An argument required for $OPTARG was not passed"
-			usage
-			;;
-		?)
-			usage
-			;;
+	i)
+		install_scheduler="-i"
+		;;
+	p)
+		v2plugin_param="-p"
+		;;
+	c)
+		cp "$OPTARG" "$host_tls_cert"
+		;;
+	k)
+		cp "$OPTARG" "$host_tls_key"
+		;;
+	:)
+		echo "An argument required for $OPTARG was not passed"
+		usage
+		;;
+	?)
+		usage
+		;;
 	esac
 done
 
@@ -148,7 +148,7 @@ fi
 if [ "$ans_opts" == "" ]; then
 	ans_opts="--private-key $def_ans_key -u $ans_user"
 else
-    ans_opts+=" --private-key $def_ans_key -u $ans_user"
+	ans_opts+=" --private-key $def_ans_key -u $ans_user"
 fi
 
 # Generate SSL certs for auth proxy
@@ -173,5 +173,5 @@ mounts[6]="-v"
 mounts[7]="$(pwd)/contiv_cache:/var/contiv_cache:Z"
 set -x
 docker run --rm --net=host "${mounts[@]}" $image_name ./install/ansible/install.sh \
-$netmaster_param -a "$ans_opts" $install_scheduler -m $contiv_network_mode \
--d $fwd_mode $aci_param $cluster_param $v2plugin_param
+	$netmaster_param -a "$ans_opts" $install_scheduler -m $contiv_network_mode \
+	-d $fwd_mode $aci_param $cluster_param $v2plugin_param

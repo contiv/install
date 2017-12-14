@@ -16,13 +16,13 @@ mkdir -p "$CONTIV_ARTIFACT_STAGING"
 
 # check if installer is for a release version of netplugin
 if [ -z "${NETPLUGIN_BRANCH:-}" ]; then
-    echo Downloading netplugin-${CONTIV_NETPLUGIN_VERSION}
-    # retrieve release vesion of netplugin
-    base_url=https://github.com/contiv/netplugin/releases/download
-    netplugin_bundle_name=netplugin-$CONTIV_NETPLUGIN_VERSION.tar.bz2
-    curl -sL ${base_url}/$CONTIV_NETPLUGIN_VERSION/$netplugin_bundle_name \
-        -o "${CONTIV_ARTIFACT_STAGING}/$netplugin_bundle_name"
-    exit
+	echo Downloading netplugin-${CONTIV_NETPLUGIN_VERSION}
+	# retrieve release vesion of netplugin
+	base_url=https://github.com/contiv/netplugin/releases/download
+	netplugin_bundle_name=netplugin-$CONTIV_NETPLUGIN_VERSION.tar.bz2
+	curl -sL ${base_url}/$CONTIV_NETPLUGIN_VERSION/$netplugin_bundle_name \
+		-o "${CONTIV_ARTIFACT_STAGING}/$netplugin_bundle_name"
+	exit
 fi
 
 # build netplugin based on SHA
@@ -34,8 +34,8 @@ trap 'rm -rf ${netplugin_tmp_dir}' EXIT
 echo Cloning ${NETPLUGIN_OWNER}/netplugin branch ${NETPLUGIN_BRANCH}
 # about 3x faster to pull the HEAD of a branch with no history
 git clone --branch ${NETPLUGIN_BRANCH} --depth 1 \
-    https://github.com/${NETPLUGIN_OWNER}/netplugin.git \
-    ${netplugin_tmp_dir}/netplugin
+	https://github.com/${NETPLUGIN_OWNER}/netplugin.git \
+	${netplugin_tmp_dir}/netplugin
 
 # run the build and extract the binaries
 cd $netplugin_tmp_dir/netplugin
