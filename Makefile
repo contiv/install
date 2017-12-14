@@ -5,7 +5,7 @@ export CONTIV_INSTALLER_VERSION ?= $(BUILD_VERSION)
 # downloaded and built assets intended to go in installer by build.sh
 export CONTIV_ARTIFACT_STAGING := $(PWD)/artifact_staging
 # some assets are retrieved from GitHub, this is the default version to fetch
-export DEFAULT_DOWNLOAD_CONTIV_VERSION := 1.1.7
+export DEFAULT_DOWNLOAD_CONTIV_VERSION := 1.2.0
 export CONTIV_ACI_GW_VERSION ?= latest
 export NETPLUGIN_OWNER ?= contiv
 # setting NETPLUGIN_BRANCH compiles that commit on demand,
@@ -107,10 +107,15 @@ release-test-swarm-mode: build
 	make cluster-swarm-mode
 	make install-test-swarm-mode
 
+# create k8s release testing image (do not contains ansible)
+k8s-build: prepare-netplugin-images assemble-build
+
+prepare-netplugin-images:
+	@bash ./scripts/prepare_netplugin_images.sh
 # Create a build and test the release installation on a vagrant cluster
 # TODO: The vagrant part of this can be optimized by taking snapshots instead
 # of creating a new set of VMs for each case
-release-test-kubeadm: build
+release-test-kubeadm: k8s-build
 	# Test kubeadm (centos by default)
 	make cluster-kubeadm
 	make install-test-kubeadm
@@ -152,4 +157,4 @@ install-test-legacy-swarm:
 ci: release-test-kubeadm
 ci-old: release-test-swarm-mode release-test-kubeadm release-test-legacy-swarm
 
-.PHONY: all build cluster cluster-destroy release-test-legacy-swarm release-test-swarm-mode release-test-kubeadm release-test-kubelegacy install-test-legacy-swarm install-test-swarm-mode install-test-kubeadm install-test-kube-legacy
+.PHONY: all build cluster cluster-destroy release-test-legacy-swarm release-test-swarm-mode release-test-kubeadm release-test-kubelegacy install-test-legacy-swarm install-test-swarm-mode install-test-kubeadm install-test-kube-legacy k8s-build prepare-netplugin-images

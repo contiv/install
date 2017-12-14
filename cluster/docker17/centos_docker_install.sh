@@ -6,8 +6,8 @@
 set -euo pipefail
 
 if [ $EUID -ne 0 ]; then
-        echo "Please run this script as root user"
-        exit 1
+	echo "Please run this script as root user"
+	exit 1
 fi
 
 # Install pre-reqs
@@ -16,22 +16,21 @@ yum install -y yum-utils device-mapper-persistent-data lvm2
 
 yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 
-
 # Install Docker
-# If you require a specific version, comment out the first line and uncomment 
+# If you require a specific version, comment out the first line and uncomment
 # the other one. Fill in the version you want.
 yum -y install docker-ce
 #sudo yum install docker-ce-<VERSION>
 
 # Post-install steps
-# add admin user to docker group 
+# add admin user to docker group
 usermod -aG docker $SUDO_USER
 
 # add /etc/docker/ if it doesn't exist
 mkdir -p /etc/docker
 
 # add (and create) daemon.json with entry for storage-device
-cat <<EOT >> /etc/docker/daemon.json
+cat <<EOT >>/etc/docker/daemon.json
 {
   "storage-driver": "devicemapper"
 }

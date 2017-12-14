@@ -21,7 +21,7 @@ aci_gw_version=${CONTIV_ACI_GW_VERSION:-"latest"}
 ansible_image_version=${CONTIV_ANSIBLE_IMAGE:-contiv/install:$DEFAULT_DOWNLOAD_CONTIV_VERSION}
 auth_proxy_version=${CONTIV_API_PROXY_VERSION:-$DEFAULT_DOWNLOAD_CONTIV_VERSION}
 docker_version=${CONTIV_DOCKER_VERSION:-1.12.6}
-etcd_version=${CONTIV_ETCD_VERSION:-v2.3.8}
+etcd_version=${CONTIV_ETCD_VERSION:-v3.2.4}
 v2plugin_version=${CONTIV_V2PLUGIN_VERSION}
 
 # where everything is assembled, always start with a clean dir and clean it up
@@ -71,25 +71,28 @@ mkdir -p $binary_cache
 # only build installer that pulls artifacts over internet if not building
 # a specific commit of netplugin
 if [ -z "${NETPLUGIN_BRANCH:-}" ]; then
-    # Create the minimal tar bundle
-    tar czf $output_file -C $output_tmp_dir contiv-${CONTIV_INSTALLER_VERSION}
-    echo -n "Contiv Installer version '$CONTIV_INSTALLER_VERSION' with "
-    echo    "netplugin version '$CONTIV_NETPLUGIN_VERSION' is available "
-    echo    "at '$output_file'"
+	# Create the minimal tar bundle
+	tar czf $output_file -C $output_tmp_dir contiv-${CONTIV_INSTALLER_VERSION}
+	echo -n "Contiv Installer version '$CONTIV_INSTALLER_VERSION' with "
+	echo "netplugin version '$CONTIV_NETPLUGIN_VERSION' is available "
+	echo "at '$output_file'"
 fi
 
 # Save the auth proxy & aci-gw images for packaging the full docker images with contiv install binaries
 if [[ "$(docker images -q contiv/auth_proxy:$auth_proxy_version 2>/dev/null)" == "" || "$pull_images" == "true" ]]; then
 	docker pull contiv/auth_proxy:$auth_proxy_version
 fi
-proxy_image=$(docker images -q contiv/auth_proxy:$auth_proxy_version)
-docker save $proxy_image -o $binary_cache/auth-proxy-image.tar
+docker save contiv/auth_proxy:$auth_proxy_version -o $binary_cache/auth-proxy-image.tar
 
 if [[ "$(docker images -q contiv/aci-gw:$aci_gw_version 2>/dev/null)" == "" || "$pull_images" == "true" ]]; then
 	docker pull contiv/aci-gw:$aci_gw_version
 fi
-aci_image=$(docker images -q contiv/aci-gw:$aci_gw_version)
-docker save $aci_image -o $binary_cache/aci-gw-image.tar
+docker save contiv/aci-gw:$aci_gw_version -o $binary_cache/aci-gw-image.tar
+
+if [ -f $CONTIV_ARTIFACT_STAGING/netplugin-image-${CONTIV_NETPLUGIN_VERSION}.tar ]; then
+	cp $CONTIV_ARTIFACT_STAGING/netplugin-image-${CONTIV_NETPLUGIN_VERSION}.tar $binary_cache/
+fi
+
 curl --fail -sL -o $binary_cache/openvswitch-2.5.0-2.el7.x86_64.rpm http://cbs.centos.org/kojifiles/packages/openvswitch/2.5.0/2.el7/x86_64/openvswitch-2.5.0-2.el7.x86_64.rpm
 curl --fail -sL -o $binary_cache/ovs-common.deb http://mirrors.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-common_2.5.2-0ubuntu0.16.04.3_amd64.deb
 curl --fail -sL -o $binary_cache/ovs-switch.deb http://mirrors.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-switch_2.5.2-0ubuntu0.16.04.3_amd64.deb
@@ -99,18 +102,29 @@ curl --fail -sL -o $binary_cache/ovs-switch.deb http://mirrors.kernel.org/ubuntu
 # but there is a symlink to point to the SHA named tarball by it's branch name
 plugin_tball="${CONTIV_ARTIFACT_STAGING}/$CONTIV_NETPLUGIN_TARBALL_NAME"
 if [[ -L "${plugin_tball}" ]]; then
-    # copy the link (so other processes can find the tarball) and the tarball
-    target_plugin_tball="$(readlink "${plugin_tball}")"
-    cp -a "${plugin_tball}" "${binary_cache}/"
-    plugin_tball="${CONTIV_ARTIFACT_STAGING}/${target_plugin_tball}"
+	# copy the link (so other processes can find the tarball) and the tarball
+	target_plugin_tball="$(readlink "${plugin_tball}")"
+	cp -a "${plugin_tball}" "${binary_cache}/"
+	plugin_tball="${CONTIV_ARTIFACT_STAGING}/${target_plugin_tball}"
 fi
-cp "${plugin_tball}" "${binary_cache}/"
+if [ -f "${plugin_tball}" ]; then
+	cp "${plugin_tball}" "${binary_cache}/"
+fi
 
 # copy v2plugin assets if built locally on branch
 if [ -n "${NETPLUGIN_BRANCH:-}" ]; then
-    cp "${CONTIV_ARTIFACT_STAGING}"/${CONTIV_V2PLUGIN_TARBALL_NAME} \
-        "${binary_cache}/"
-    cp "${CONTIV_ARTIFACT_STAGING}/config.json" "${binary_cache}/"
+	if [ -L "${CONTIV_ARTIFACT_STAGING}/$CONTIV_V2PLUGIN_TARBALL_NAME" ]; then
+		cp "${CONTIV_ARTIFACT_STAGING}/${CONTIV_V2PLUGIN_TARBALL_NAME}" "${binary_cache}/"
+		v2plugin_tball="$(readlink ${CONTIV_ARTIFACT_STAGING}/${CONTIV_V2PLUGIN_TARBALL_NAME})"
+		if [ -f "$v2plugin_tball" ]; then
+			cp -a "$v2plugin_tball" "${binary_cache}/"
+		fi
+	fi
+
+	if [ -f "${CONTIV_ARTIFACT_STAGING}/config.json" ]; then
+		cp "${CONTIV_ARTIFACT_STAGING}/config.json" "${binary_cache}/"
+	fi
+
 fi
 
 env_file=$output_dir/install/ansible/env.json
@@ -122,8 +136,8 @@ cat $env_file
 # Create the full tar bundle
 tar czf $full_output_file -C $output_tmp_dir contiv-${CONTIV_INSTALLER_VERSION}
 echo -n "Contiv Installer version '$CONTIV_INSTALLER_VERSION' with "
-echo    "netplugin version '$CONTIV_NETPLUGIN_VERSION' is available "
-echo    "at '$full_output_file', it includes all contiv assets "
-echo    "required for installation"
+echo "netplugin version '$CONTIV_NETPLUGIN_VERSION' is available "
+echo "at '$full_output_file', it includes all contiv assets "
+echo "required for installation"
 echo
 echo -e "\nSuccess"

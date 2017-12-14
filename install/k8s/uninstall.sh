@@ -7,11 +7,6 @@ fi
 
 kubectl="kubectl --kubeconfig /etc/kubernetes/admin.conf"
 k8sversion=$($kubectl version --short | grep "Server Version")
-if [[ "$k8sversion" == *"v1.4"* ]] || [[ "$k8sversion" == *"v1.5"* ]]; then
-	k8sfolder="k8s1.4"
-else
-	k8sfolder="rbac"
-fi
 if [ "$#" -eq 1 ] && [ "$1" = "-h" ]; then
 	echo "Usage: ./install/k8s/uninstall.sh to uninstall contiv"
 	echo "       ./install/k8s/uninstall.sh etcd-cleanup to uninstall contiv and cleanup contiv data"
@@ -28,6 +23,6 @@ if [ "$#" -eq 1 ] && [ "$1" = "etcd-cleanup" ]; then
 	rm -rf /var/etcd/contiv-data
 fi
 
-$kubectl create -f install/k8s/$k8sfolder/cleanup.yaml
+$kubectl create -f install/k8s/configs/cleanup.yaml
 sleep 60
-$kubectl delete -f install/k8s/$k8sfolder/cleanup.yaml
+$kubectl delete -f install/k8s/configs/cleanup.yaml

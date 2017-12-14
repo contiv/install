@@ -31,13 +31,13 @@ release_name="contiv-${BUILD_VERSION:-devbuild}"
 release_tarball="${release_name}.tgz"
 release_local_tarball="contiv-full-${BUILD_VERSION}.tgz"
 if [ -f "${release_local_tarball}" ]; then
-    tar oxf "${release_local_tarball}"
+	tar oxf "${release_local_tarball}"
 else
-    if [ ! -f "${release_tarball}" ]; then
-        # For release builds, get the build from github releases
-        curl -L -O https://github.com/contiv/install/releases/download/${BUILD_VERSION}/${release_name}.tgz
-    fi
-    tar oxf "${release_name}.tgz"
+	if [ ! -f "${release_tarball}" ]; then
+		# For release builds, get the build from github releases
+		curl -L -O https://github.com/contiv/install/releases/download/${BUILD_VERSION}/${release_name}.tgz
+	fi
+	tar oxf "${release_name}.tgz"
 fi
 
 cd $release_name
