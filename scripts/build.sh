@@ -46,7 +46,9 @@ cp -rf scripts/generate-certificate.sh $output_dir/install
 chmod +x $output_dir/install/genInventoryFile.py
 chmod +x $output_dir/install/generate-certificate.sh
 
-cp -a "${CONTIV_ARTIFACT_STAGING}/ansible" ${output_dir}/
+if [ -d ${CONTIV_ARTIFACT_STAGING}/ansible ]; then
+	cp -a "${CONTIV_ARTIFACT_STAGING}/ansible" ${output_dir}/
+fi
 
 # Replace versions
 files=$(find $output_dir -type f -name "*.yaml" -or -name "*.sh" -or -name "*.json")
