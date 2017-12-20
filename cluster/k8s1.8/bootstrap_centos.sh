@@ -20,7 +20,7 @@ setenforce 0
 
 swapoff -a
 
-yum install -y docker kubelet-1.8.4 kubeadm-1.8.4 kubectl-1.8.4 kubernetes-cni-1.8.4 ntp
+yum install -y docker kubeadm-1.8.4 kubectl-1.8.4 kubernetes-cni-1.8.4 ntp
 
 systemctl enable docker && systemctl start docker
 systemctl enable kubelet && systemctl start kubelet
