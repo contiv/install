@@ -63,7 +63,6 @@ Additional Options:
 -s   string     (DEPRECATED) External cluster store to be used to store contiv data. This can be an etcd or consul server.
 -v   string     Data plane interface
 -w   string     Forwarding mode (“routing” or “bridge”). Default mode is “bridge”
--c   string     Configuration file for netplugin
 -t   string     Certificate to use for auth proxy https endpoint
 -k   string     Key to use for auth proxy https endpoint
 -g   string     Gateway to use for the infrastructure network
