@@ -15,7 +15,7 @@ EOF
 apt-get update
 # Install docker if you don't have it already.
 apt-get install -y docker.io
-apt-get install -y kubelet kubeadm kubectl kubernetes-cni
+apt-get install -y kubelet=1.6.5-0 kubeadm=1.6.5-0
 apt-get install -y ntp
 
 systemctl enable ntpd && systemctl start ntpd
