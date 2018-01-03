@@ -18,7 +18,7 @@ EOF
 
 setenforce 0
 
-yum install -y docker kubelet-1.6.5 kubeadm-1.6.5 kubectl-1.6.5 kubernetes-cni-1.6.5 ntp
+yum install -y docker kubeadm-1.6.5 kubectl-1.6.5-0 kubernetes-cni-0.5.1 ntp
 
 systemctl enable docker && systemctl start docker
 systemctl enable kubelet && systemctl start kubelet
