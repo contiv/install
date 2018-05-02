@@ -22,6 +22,8 @@ swapoff -a
 
 yum install -y docker kubeadm-1.8.4 kubectl-1.8.4 kubernetes-cni-1.8.4 ntp
 
+sed -i -e "s/OPTIONS.*/OPTIONS='--selinux-enabled=false --log-driver=journald --signature-verification=false'/g" /etc/sysconfig/docker
+
 systemctl enable docker && systemctl start docker
 systemctl enable kubelet && systemctl start kubelet
 systemctl enable ntpd && systemctl start ntpd
