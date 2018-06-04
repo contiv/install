@@ -91,8 +91,8 @@ fi
 aci_image=$(docker images -q contiv/aci-gw:$aci_gw_version)
 docker save $aci_image -o $binary_cache/aci-gw-image.tar
 curl --fail -sL -o $binary_cache/openvswitch-2.5.0-2.el7.x86_64.rpm http://cbs.centos.org/kojifiles/packages/openvswitch/2.5.0/2.el7/x86_64/openvswitch-2.5.0-2.el7.x86_64.rpm
-curl --fail -sL -o $binary_cache/ovs-common.deb http://mirrors.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-common_2.5.2-0ubuntu0.16.04.3_amd64.deb
-curl --fail -sL -o $binary_cache/ovs-switch.deb http://mirrors.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-switch_2.5.2-0ubuntu0.16.04.3_amd64.deb
+curl --fail -sL -o $binary_cache/ovs-common.deb https://mirrors.edge.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-common_2.5.4-0ubuntu0.16.04.1_amd64.deb
+curl --fail -sL -o $binary_cache/ovs-switch.deb https://mirrors.edge.kernel.org/ubuntu/pool/main/o/openvswitch/openvswitch-switch_2.5.4-0ubuntu0.16.04.1_amd64.deb
 
 # Copy the netplugin release into the binary cache for "full" installer
 # Netplugin releases built locally based on a branch are named by their SHA,
